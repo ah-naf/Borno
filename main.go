@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/ah-naf/crafting-interpreter/lexer"
+	"github.com/ah-naf/crafting-interpreter/parser"
 	"github.com/ah-naf/crafting-interpreter/utils"
 )
 
@@ -52,7 +53,15 @@ func run(source string) {
 	scanner := lexer.NewScanner(source)
 	tokens := scanner.ScanTokens()
 
-	for _, token := range tokens {
-		fmt.Println(token)
+	Parser := parser.NewParser(tokens)
+	expr, _ := Parser.Parse()
+
+	if utils.HadError {
+		return;
 	}
+
+	// for _, token := range tokens {
+	// 	fmt.Println(token)
+	// }
+	fmt.Println(expr)
 }
