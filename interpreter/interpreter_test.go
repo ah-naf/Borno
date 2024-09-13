@@ -82,6 +82,9 @@ func TestEvalExpression(t *testing.T) {
 		{"Nil addition with nil", "nil + nil", nil, "Operands must be two numbers or two strings."},
 		{"Number and empty string", "42 + \"\"", "42", ""},
 		{"Empty string and number", "\"\" + 42", "42", ""},
+
+		{"Mixed number and string concatenation", "2 + 2 + 1 + \"bar\"", "5bar", ""},
+		{"Mixed number and string concatenation 2", "\"bar\" + 2 + 2 + 1 + \"bar\"", "bar221bar", ""},
 	}
 
 	for _, tt := range tests {
