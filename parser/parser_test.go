@@ -30,6 +30,12 @@ func TestParseGrammar(t *testing.T) {
 		expectErr bool
 	}{
 		{
+			name: "Null",
+			input: "nil",
+			expected: "nil",
+			expectErr: false,
+		},
+		{
 			name:      "Nested grouping",
 			input:     "(1 + (2 * 3))",
 			expected:  "(group (1 + (group (2 * 3))))",

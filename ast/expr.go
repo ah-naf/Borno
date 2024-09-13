@@ -37,6 +37,9 @@ type Literal struct {
 }
 
 func (l *Literal) String() string {
+	if l.Value == nil {
+		return "nil"
+	}
 	return fmt.Sprintf("%v", l.Value)
 }
 

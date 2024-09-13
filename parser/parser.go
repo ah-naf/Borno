@@ -144,7 +144,7 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.Literal{Value: true}, nil
 	}
 	if p.match(token.NIL) {
-		return &ast.Literal{Value: "nil"}, nil
+		return &ast.Literal{Value: nil}, nil
 	}
 
 	if p.match(token.NUMBER, token.STRING) {

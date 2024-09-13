@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ah-naf/crafting-interpreter/interpreter"
 	"github.com/ah-naf/crafting-interpreter/lexer"
 	"github.com/ah-naf/crafting-interpreter/parser"
 	"github.com/ah-naf/crafting-interpreter/utils"
@@ -31,6 +32,9 @@ func runFile(path string) {
 	if utils.HadError {
 		os.Exit(65)
 	}
+	if utils.HadRuntimeError {
+		os.Exit(70)
+	}
 }
 
 func runPrompt() {
@@ -46,6 +50,7 @@ func runPrompt() {
 		run(line)
 
 		utils.HadError = false
+		utils.HadRuntimeError = false
 	}
 }
 
@@ -57,11 +62,18 @@ func run(source string) {
 	expr, _ := Parser.Parse()
 
 	if utils.HadError {
-		return;
+		return
 	}
+
+	result := interpreter.Eval(expr)
+	if utils.HadRuntimeError {
+		return
+	}
+
+	fmt.Println(result)
 
 	// for _, token := range tokens {
 	// 	fmt.Println(token)
 	// }
-	fmt.Println(expr)
+	// fmt.Println(expr)
 }
