@@ -111,6 +111,8 @@ func (s *Scanner) scanToken() {
 			for s.peek() != '\n' && !s.isAtEnd() {
 				s.advance()
 			}
+		} else if s.match('*') {
+			s.multilineComment()
 		} else {
 			s.addToken(token.SLASH)
 		}
@@ -184,6 +186,21 @@ func (s *Scanner) stringLiteral() {
 
 	value := s.source[s.start+1 : s.current-1]
 	s.AddToken(token.STRING, value)
+}
+
+func (s *Scanner) multilineComment() {
+	for !s.isAtEnd() {
+		if s.peek() == '\n' {
+			s.line++
+		} else if s.peek() == '*' && s.peekNext() == '/' {
+			// Close the comment
+			s.advance() // consume *
+			s.advance() // consum /
+			return
+		}
+		s.advance()
+	}
+	utils.GlobalError(s.line, "Unterminated multiline comment")
 }
 
 func (s *Scanner) match(expected byte) bool {
