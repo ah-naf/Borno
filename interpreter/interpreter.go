@@ -1,6 +1,8 @@
 package interpreter
 
 import (
+	"fmt"
+
 	"github.com/ah-naf/crafting-interpreter/ast"
 	"github.com/ah-naf/crafting-interpreter/token"
 	"github.com/ah-naf/crafting-interpreter/utils"
@@ -44,21 +46,31 @@ func evaluateBinary(left interface{}, operator token.Token, right interface{}) i
 		// Handle number addition and string concatenation
 		switch l := left.(type) {
 		case float64:
-			r, ok := right.(float64)
-			if !ok {
-				utils.RuntimeError(operator, "Right operand must be a number.")
+			switch r := right.(type) {
+			case float64:
+				// Number + Number
+				return l + r
+			case string:
+				// Number + String -> Convert number to string and concatenate
+				return fmt.Sprintf("%v", l) + r
+			default:
+				utils.RuntimeError(operator, "Right operand must be a number or string.")
 				return nil
 			}
-			return l + r
 		case string:
-			r, ok := right.(string)
-			if !ok {
-				utils.RuntimeError(operator, "Right operand must be a string.")
+			switch r := right.(type) {
+			case float64:
+				// String + Number -> Convert number to string and concatenate
+				return l + fmt.Sprintf("%v", r)
+			case string:
+				// String + String
+				return l + r
+			default:
+				utils.RuntimeError(operator, "Right operand must be a number or string.")
 				return nil
 			}
-			return l + r
 		default:
-			utils.RuntimeError(operator, "Operands must be two numbers or two strings.")
+			utils.RuntimeError(operator, "Left operand must be a number or string.")
 			return nil
 		}
 

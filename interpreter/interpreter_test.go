@@ -45,11 +45,6 @@ func TestEvalExpression(t *testing.T) {
 		{"Grouping expressions", "(1 + 2) * (3 + 4)", 21.0, ""},
 		{"Nested grouping", "((1 + 2) * 3) + (4 * (5 - 2))", 21.0, ""},
 
-		// Combinations of strings and numbers
-		{"Concatenation of strings", "\"Hello\" + \" \" + \"World\"", "Hello World", ""},
-		{"String and number concatenation", "\"Number: \" + 42", "Number: 42", "Right operand must be a string."},
-		{"String addition error", "\"foo\" + 1", nil, "Operands must be two numbers or two strings."},
-
 		// Boolean expressions
 		{"Boolean comparison", "true == false", false, ""},
 		{"Boolean and number comparison", "true == 1", false, ""},
@@ -66,6 +61,27 @@ func TestEvalExpression(t *testing.T) {
 		// Error cases
 		{"Division by zero", "10 / 0", nil, "Division by zero."},
 		{"Invalid comparison with nil", "5 > nil", nil, "Right operand must be a number."},
+
+		// String + number -> Should concatenate after converting number to string
+		{"String and number concatenation", "\"Number: \" + 42", "Number: 42", ""},
+		{"Number and string concatenation", "42 + \" is the answer\"", "42 is the answer", ""},
+
+		// String + float
+		{"String and float concatenation", "\"Pi is \" + 3.14", "Pi is 3.14", ""},
+
+		// Number + string + number -> Should concatenate all
+		{"Number + string + number", "123 + \" + \" + 456", "123 + 456", ""},
+
+		// Invalid operations
+		{"Invalid addition of string and boolean", "\"foo\" + true", nil, "Right operand must be a number or string."},
+		{"Invalid addition of boolean and string", "true + \"foo\"", nil, "Left operand must be a number or string."},
+		{"Invalid addition of string and nil", "\"foo\" + nil", nil, "Right operand must be a number or string."},
+		{"Invalid addition of number and nil", "42 + nil", nil, "Right operand must be a number or string."},
+
+		// Edge cases
+		{"Nil addition with nil", "nil + nil", nil, "Operands must be two numbers or two strings."},
+		{"Number and empty string", "42 + \"\"", "42", ""},
+		{"Empty string and number", "\"\" + 42", "42", ""},
 	}
 
 	for _, tt := range tests {
@@ -196,7 +212,7 @@ func TestEvalBinary(t *testing.T) {
 	}{
 		{"Addition Numbers", 2.0, token.PLUS, 3.0, 5.0, ""},
 		{"Addition Strings", "foo", token.PLUS, "bar", "foobar", ""},
-		{"Addition Number and String", 2.0, token.PLUS, "bar", nil, "Operands must be two numbers or two strings."},
+		{"Addition Number and String", 2.0, token.PLUS, "bar", "2bar", ""},
 		{"Subtraction", 5.0, token.MINUS, 2.0, 3.0, ""},
 		{"Multiplication", 4.0, token.STAR, 2.5, 10.0, ""},
 		{"Division", 10.0, token.SLASH, 2.0, 5.0, ""},
