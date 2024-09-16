@@ -80,8 +80,20 @@ func (s *Scanner) scanToken() {
 		s.addToken(token.PLUS)
 	case ';':
 		s.addToken(token.SEMICOLON)
+	case '|':
+		s.addToken(token.OR)
+	case '&':
+		s.addToken(token.AND)
+	case '^':
+		s.addToken(token.XOR)
+	case '~':
+		s.addToken(token.NEGATION)
 	case '*':
-		s.addToken(token.STAR)
+		if s.match('*') {
+			s.addToken(token.POWER)
+		} else {
+			s.addToken(token.STAR)
+		}
 	case '!':
 		if s.match('=') {
 			s.addToken(token.BANG_EQUAL)
@@ -97,12 +109,16 @@ func (s *Scanner) scanToken() {
 	case '<':
 		if s.match('=') {
 			s.addToken(token.LESS_EQUAL)
+		} else if s.match('<') {
+			s.addToken(token.LEFT_SHIFT)
 		} else {
 			s.addToken(token.LESS)
 		}
 	case '>':
 		if s.match('=') {
 			s.addToken(token.GREATER_EQUAL)
+		} else if s.match('>') {
+			s.addToken(token.RIGHT_SHIFT)
 		} else {
 			s.addToken(token.GREATER)
 		}
@@ -136,7 +152,7 @@ func (s *Scanner) identifier() {
 	for isAlphaNumeric(s.peek()) {
 		s.advance()
 	}
-	
+
 	text := s.source[s.start:s.current]
 	if keyword, ok := keywords[text]; ok {
 		s.addToken(keyword)

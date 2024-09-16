@@ -19,6 +19,11 @@ const (
 	SEMICOLON
 	SLASH
 	STAR
+	AND
+	OR
+	XOR
+	POWER
+	NEGATION
 
 	// One or two character tokens
 	BANG
@@ -27,8 +32,10 @@ const (
 	EQUAL_EQUAL
 	GREATER
 	GREATER_EQUAL
+	LEFT_SHIFT
 	LESS
 	LESS_EQUAL
+	RIGHT_SHIFT
 
 	// Literals
 	IDENTIFIER
@@ -36,7 +43,7 @@ const (
 	NUMBER
 
 	// Keywords
-	AND
+	LOGICAL_AND
 	CLASS
 	ELSE
 	FALSE
@@ -44,7 +51,7 @@ const (
 	FOR
 	IF
 	NIL
-	OR
+	LOGICAL_OR
 	PRINT
 	RETURN
 	SUPER

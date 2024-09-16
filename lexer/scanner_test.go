@@ -21,21 +21,24 @@ func TestScanTokens(t *testing.T) {
 		},
 		{
 			name:  "Single character tokens",
-			input: "(){},.-+;*",
+			input: "(){},.-+;*|&^~",
 			expected: []token.TokenType{
 				token.LEFT_PAREN, token.RIGHT_PAREN, token.LEFT_BRACE, token.RIGHT_BRACE,
 				token.COMMA, token.DOT, token.MINUS, token.PLUS, token.SEMICOLON, token.STAR,
+				token.OR, token.AND, token.XOR, token.NEGATION,
 				token.EOF,
 			},
 		},
 		{
 			name:  "One and two character tokens",
-			input: "! != = == < <= > >=",
+			input: "! != = == < <= > >= ** << >>",
 			expected: []token.TokenType{
 				token.BANG, token.BANG_EQUAL,
 				token.EQUAL, token.EQUAL_EQUAL,
 				token.LESS, token.LESS_EQUAL,
 				token.GREATER, token.GREATER_EQUAL,
+				token.POWER,
+				token.LEFT_SHIFT, token.RIGHT_SHIFT,
 				token.EOF,
 			},
 		},
@@ -60,6 +63,17 @@ func TestScanTokens(t *testing.T) {
 			expected: []token.TokenType{
 				token.VAR, token.IDENTIFIER, token.EQUAL, token.NUMBER, token.SEMICOLON,
 				token.PRINT, token.LEFT_PAREN, token.IDENTIFIER, token.PLUS, token.NUMBER, token.RIGHT_PAREN, token.SEMICOLON,
+				token.EOF,
+			},
+		},
+		{
+			name:  "Valid language input with new operators",
+			input: `var x = 10; print(x + 20); y = x & 5 | 3 ^ 2; z = x << 2 >> 1;`,
+			expected: []token.TokenType{
+				token.VAR, token.IDENTIFIER, token.EQUAL, token.NUMBER, token.SEMICOLON,
+				token.PRINT, token.LEFT_PAREN, token.IDENTIFIER, token.PLUS, token.NUMBER, token.RIGHT_PAREN, token.SEMICOLON,
+				token.IDENTIFIER, token.EQUAL, token.IDENTIFIER, token.AND, token.NUMBER, token.OR, token.NUMBER, token.XOR, token.NUMBER, token.SEMICOLON,
+				token.IDENTIFIER, token.EQUAL, token.IDENTIFIER, token.LEFT_SHIFT, token.NUMBER, token.RIGHT_SHIFT, token.NUMBER, token.SEMICOLON,
 				token.EOF,
 			},
 		},
