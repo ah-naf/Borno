@@ -30,9 +30,51 @@ func TestParseGrammar(t *testing.T) {
 		expectErr bool
 	}{
 		{
-			name: "Null",
-			input: "nil",
-			expected: "nil",
+			name:      "Null",
+			input:     "nil",
+			expected:  "nil",
+			expectErr: false,
+		},
+		{
+			name:      "Bitwise AND",
+			input:     "5 & 3",
+			expected:  "(5 & 3)",
+			expectErr: false,
+		},
+		{
+			name:      "Bitwise OR",
+			input:     "5 | 3",
+			expected:  "(5 | 3)",
+			expectErr: false,
+		},
+		{
+			name:      "Bitwise XOR",
+			input:     "5 ^ 3",
+			expected:  "(5 ^ 3)",
+			expectErr: false,
+		},
+		{
+			name:      "Bitwise NOT",
+			input:     "~5",
+			expected:  "(~5)",
+			expectErr: false,
+		},
+		{
+			name:      "Left Shift",
+			input:     "5 << 2",
+			expected:  "(5 << 2)",
+			expectErr: false,
+		},
+		{
+			name:      "Right Shift",
+			input:     "20 >> 2",
+			expected:  "(20 >> 2)",
+			expectErr: false,
+		},
+		{
+			name:      "Power",
+			input:     "2 ** 3",
+			expected:  "(2 ** 3)",
 			expectErr: false,
 		},
 		{
@@ -63,6 +105,24 @@ func TestParseGrammar(t *testing.T) {
 			name:      "Unary and binary mixed",
 			input:     "-(1 + 2) * !(3 > 4)",
 			expected:  "((-(group (1 + 2))) * (!(group (3 > 4))))",
+			expectErr: false,
+		},
+		{
+			name:      "Complex bitwise operations",
+			input:     "(5 & 3) | (4 ^ 2)",
+			expected:  "((group (5 & 3)) | (group (4 ^ 2)))",
+			expectErr: false,
+		},
+		{
+			name:      "Shift and power",
+			input:     "(10 >> 1) ** 2",
+			expected:  "((group (10 >> 1)) ** 2)",
+			expectErr: false,
+		},
+		{
+			name:      "Precedence test",
+			input:     "1 + 2 * 3 ** 2 & 4 | 5 ^ 6",
+			expected:  "(((1 + (2 * (3 ** 2))) & 4) | (5 ^ 6))",
 			expectErr: false,
 		},
 	}

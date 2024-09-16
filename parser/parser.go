@@ -32,7 +32,71 @@ func (p *Parser) Parse() (ast.Expr, error) {
 }
 
 func (p *Parser) expression() (ast.Expr, error) {
-	return p.equality()
+	// Change it to bitwiseOR
+	return p.bitwiseOR()
+}
+
+func (p *Parser) bitwiseOR() (ast.Expr, error) {
+	expr, err := p.bitwiseXOR()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.OR) {
+		operator := p.previous()
+		right, err := p.bitwiseXOR()
+
+		if err != nil {
+			return nil, err
+		}
+
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) bitwiseXOR() (ast.Expr, error) {
+	expr, err := p.bitwiseAND()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.XOR) {
+		operator := p.previous()
+		right, err := p.bitwiseAND()
+
+		if err != nil {
+			return nil, err
+		}
+
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) bitwiseAND() (ast.Expr, error) {
+	expr, err := p.equality()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.AND) {
+		operator := p.previous()
+		right, err := p.equality()
+
+		if err != nil {
+			return nil, err
+		}
+
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr, nil
 }
 
 func (p *Parser) equality() (ast.Expr, error) {
@@ -57,13 +121,34 @@ func (p *Parser) equality() (ast.Expr, error) {
 }
 
 func (p *Parser) comparison() (ast.Expr, error) {
-	expr, err := p.term()
+	expr, err := p.shift()
 
 	if err != nil {
 		return nil, err
 	}
 
 	for p.match(token.GREATER, token.GREATER_EQUAL, token.LESS, token.LESS_EQUAL) {
+		operator := p.previous()
+		right, err := p.shift()
+
+		if err != nil {
+			return nil, err
+		}
+
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) shift() (ast.Expr, error) {
+	expr, err := p.term()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.LEFT_SHIFT, token.RIGHT_SHIFT) {
 		operator := p.previous()
 		right, err := p.term()
 
@@ -88,8 +173,6 @@ func (p *Parser) term() (ast.Expr, error) {
 		operator := p.previous()
 		right, err := p.factor()
 
-		
-
 		if err != nil {
 			return nil, err
 		}
@@ -101,13 +184,34 @@ func (p *Parser) term() (ast.Expr, error) {
 }
 
 func (p *Parser) factor() (ast.Expr, error) {
-	expr, err := p.unary()
+	expr, err := p.power()
 
 	if err != nil {
 		return nil, err
 	}
 
 	for p.match(token.SLASH, token.STAR) {
+		operator := p.previous()
+		right, err := p.power()
+
+		if err != nil {
+			return nil, err
+		}
+
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) power() (ast.Expr, error) {
+	expr, err := p.unary()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.POWER) {
 		operator := p.previous()
 		right, err := p.unary()
 
@@ -122,7 +226,7 @@ func (p *Parser) factor() (ast.Expr, error) {
 }
 
 func (p *Parser) unary() (ast.Expr, error) {
-	if p.match(token.BANG, token.MINUS) {
+	if p.match(token.BANG, token.MINUS, token.NEGATION) {
 		operator := p.previous()
 		right, err := p.unary()
 
@@ -153,7 +257,7 @@ func (p *Parser) primary() (ast.Expr, error) {
 
 	if p.match(token.LEFT_PAREN) {
 		expr, err := p.expression()
-		
+
 		if err != nil {
 			return nil, err
 		}

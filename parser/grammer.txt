@@ -1,13 +1,14 @@
-expression     → equality ;
+expression     → bitwise_or ;
+bitwise_or     → bitwise_xor ( "|" bitwise_xor )* ;
+bitwise_xor    → bitwise_and ( "^" bitwise_and )* ;
+bitwise_and    → equality ( "&" equality )* ;
 equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+comparison     → shift ( ( ">" | ">=" | "<" | "<=" ) shift )* ;
+shift          → term ( ( ">>" | "<<" ) term )* ;
 term           → factor ( ( "-" | "+" ) factor )* ;
-factor         → unary ( ( "/" | "*" ) unary )* ;
-unary          → ( "!" | "-" ) unary
+factor         → power ( ( "/" | "*" ) power )* ;
+power          → unary ( "**" unary )* ;
+unary          → ( "!" | "-" | "~" ) unary
                | primary ;
 primary        → NUMBER | STRING | "true" | "false" | "nil"
                | "(" expression ")" ;
-
-
-
-((group ((group ((group (1 + 2)) * 3)) / (group (4 - 5)))) + 6)
