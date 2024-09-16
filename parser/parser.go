@@ -226,7 +226,7 @@ func (p *Parser) power() (ast.Expr, error) {
 }
 
 func (p *Parser) unary() (ast.Expr, error) {
-	if p.match(token.BANG, token.MINUS, token.NEGATION) {
+	if p.match(token.BANG, token.MINUS, token.NOT) {
 		operator := p.previous()
 		right, err := p.unary()
 

@@ -25,7 +25,7 @@ func TestScanTokens(t *testing.T) {
 			expected: []token.TokenType{
 				token.LEFT_PAREN, token.RIGHT_PAREN, token.LEFT_BRACE, token.RIGHT_BRACE,
 				token.COMMA, token.DOT, token.MINUS, token.PLUS, token.SEMICOLON, token.STAR,
-				token.OR, token.AND, token.XOR, token.NEGATION,
+				token.OR, token.AND, token.XOR, token.NOT,
 				token.EOF,
 			},
 		},

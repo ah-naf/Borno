@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/ah-naf/crafting-interpreter/ast"
 	"github.com/ah-naf/crafting-interpreter/token"
@@ -41,81 +42,145 @@ func Eval(expr ast.Expr) interface{} {
 }
 
 func evaluateBinary(left interface{}, operator token.Token, right interface{}) interface{} {
+	// Helper function to determine if both operands are int64
+	isInt64 := func(val interface{}) (int64, bool) {
+		v, ok := val.(int64)
+		if ok {
+			return v, true
+		}
+		if f, ok := val.(float64); ok && float64(int64(f)) == f {
+			return int64(f), true
+		}
+		return 0, false
+	}
+
 	switch operator.Type {
 	case token.PLUS:
 		// Handle number addition and string concatenation
 		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				// int64 + int64
+				return l + r
+			case float64:
+				// int64 + float64
+				return float64(l) + r
+			case string:
+				// int64 + string -> Convert int64 to string and concatenate
+				return fmt.Sprintf("%v", l) + r
+			}
 		case float64:
 			switch r := right.(type) {
+			case int64:
+				// float64 + int64
+				return l + float64(r)
 			case float64:
-				// Number + Number
+				// float64 + float64
 				return l + r
 			case string:
-				// Number + String -> Convert number to string and concatenate
+				// float64 + string -> Convert float64 to string and concatenate
 				return fmt.Sprintf("%v", l) + r
-			default:
-				utils.RuntimeError(operator, "Right operand must be a number or string.")
-				return nil
 			}
 		case string:
 			switch r := right.(type) {
+			case int64:
+				// string + int64 -> Convert int64 to string and concatenate
+				return l + fmt.Sprintf("%v", r)
 			case float64:
-				// String + Number -> Convert number to string and concatenate
+				// string + float64 -> Convert float64 to string and concatenate
 				return l + fmt.Sprintf("%v", r)
 			case string:
-				// String + String
+				// string + string
 				return l + r
-			default:
-				utils.RuntimeError(operator, "Right operand must be a number or string.")
-				return nil
 			}
-		default:
-			utils.RuntimeError(operator, "Left operand must be a number or string.")
-			return nil
 		}
+		utils.RuntimeError(operator, "Operands must be numbers or strings.")
+		return nil
 
 	case token.MINUS:
-		l, ok := left.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Left operand must be a number.")
-			return nil
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				// int64 - int64
+				return l - r
+			case float64:
+				// int64 - float64
+				return float64(l) - r
+			}
+		case float64:
+			switch r := right.(type) {
+			case int64:
+				// float64 - int64
+				return l - float64(r)
+			case float64:
+				// float64 - float64
+				return l - r
+			}
 		}
-		r, ok := right.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Right operand must be a number.")
-			return nil
-		}
-		return l - r
+		utils.RuntimeError(operator, "Operands must be numbers.")
+		return nil
 
 	case token.STAR:
-		l, ok := left.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Left operand must be a number.")
-			return nil
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				// int64 * int64
+				return l * r
+			case float64:
+				// int64 * float64
+				return float64(l) * r
+			}
+		case float64:
+			switch r := right.(type) {
+			case int64:
+				// float64 * int64
+				return l * float64(r)
+			case float64:
+				// float64 * float64
+				return l * r
+			}
 		}
-		r, ok := right.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Right operand must be a number.")
-			return nil
-		}
-		return l * r
+		utils.RuntimeError(operator, "Operands must be numbers.")
+		return nil
 
 	case token.SLASH:
-		l, ok := left.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Left operand must be a number.")
-			return nil
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				if r == 0 {
+					utils.RuntimeError(operator, "Division by zero.")
+					return nil
+				}
+				return l / r
+			case float64:
+				if r == 0 {
+					utils.RuntimeError(operator, "Division by zero.")
+					return nil
+				}
+				return float64(l) / r
+			}
+		case float64:
+			switch r := right.(type) {
+			case int64:
+				if r == 0 {
+					utils.RuntimeError(operator, "Division by zero.")
+					return nil
+				}
+				return l / float64(r)
+			case float64:
+				if r == 0 {
+					utils.RuntimeError(operator, "Division by zero.")
+					return nil
+				}
+				return l / r
+			}
 		}
-		r, ok := right.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Right operand must be a number.")
-			return nil
-		}
-		if r == 0 {
-			utils.RuntimeError(operator, "Divison by Zero")
-			return nil
-		}
-		return l / r
+		utils.RuntimeError(operator, "Operands must be numbers.")
+		return nil
 
 	case token.EQUAL_EQUAL:
 		return isEqual(left, right)
@@ -123,57 +188,89 @@ func evaluateBinary(left interface{}, operator token.Token, right interface{}) i
 	case token.BANG_EQUAL:
 		return !isEqual(left, right)
 
-	case token.GREATER:
-		l, ok := left.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Left operand must be a number.")
-			return nil
+	case token.GREATER, token.GREATER_EQUAL, token.LESS, token.LESS_EQUAL:
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				switch operator.Type {
+				case token.GREATER:
+					return l > r
+				case token.GREATER_EQUAL:
+					return l >= r
+				case token.LESS:
+					return l < r
+				case token.LESS_EQUAL:
+					return l <= r
+				}
+			case float64:
+				switch operator.Type {
+				case token.GREATER:
+					return float64(l) > r
+				case token.GREATER_EQUAL:
+					return float64(l) >= r
+				case token.LESS:
+					return float64(l) < r
+				case token.LESS_EQUAL:
+					return float64(l) <= r
+				}
+			}
+		case float64:
+			switch r := right.(type) {
+			case int64:
+				switch operator.Type {
+				case token.GREATER:
+					return l > float64(r)
+				case token.GREATER_EQUAL:
+					return l >= float64(r)
+				case token.LESS:
+					return l < float64(r)
+				case token.LESS_EQUAL:
+					return l <= float64(r)
+				}
+			case float64:
+				switch operator.Type {
+				case token.GREATER:
+					return l > r
+				case token.GREATER_EQUAL:
+					return l >= r
+				case token.LESS:
+					return l < r
+				case token.LESS_EQUAL:
+					return l <= r
+				}
+			}
 		}
-		r, ok := right.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Right operand must be a number.")
-			return nil
-		}
-		return l > r
+		utils.RuntimeError(operator, "Operands must be numbers.")
+		return nil
 
-	case token.GREATER_EQUAL:
-		l, ok := left.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Left operand must be a number.")
-			return nil
-		}
-		r, ok := right.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Right operand must be a number.")
-			return nil
-		}
-		return l >= r
+	case token.AND, token.OR, token.XOR, token.LEFT_SHIFT, token.RIGHT_SHIFT, token.POWER:
+		// Ensure both operands are integers
+		lInt, lIsInt := isInt64(left)
+		rInt, rIsInt := isInt64(right)
 
-	case token.LESS:
-		l, ok := left.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Left operand must be a number.")
+		if !lIsInt || !rIsInt {
+			utils.RuntimeError(operator, "Bitwise operators can only be applied to integers.")
 			return nil
 		}
-		r, ok := right.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Right operand must be a number.")
-			return nil
-		}
-		return l < r
 
-	case token.LESS_EQUAL:
-		l, ok := left.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Left operand must be a number.")
+		switch operator.Type {
+		case token.AND:
+			return lInt & rInt
+		case token.OR:
+			return lInt | rInt
+		case token.XOR:
+			return lInt ^ rInt
+		case token.LEFT_SHIFT:
+			return lInt << rInt
+		case token.RIGHT_SHIFT:
+			return lInt >> rInt
+		case token.POWER:
+			return int64(math.Pow(float64(lInt), float64(rInt)))
+		default:
+			utils.RuntimeError(operator, "Unknown binary operator: "+operator.Lexeme)
 			return nil
 		}
-		r, ok := right.(float64)
-		if !ok {
-			utils.RuntimeError(operator, "Right operand must be a number.")
-			return nil
-		}
-		return l <= r
 
 	default:
 		utils.RuntimeError(operator, "Unknown binary operator: "+operator.Lexeme)
@@ -193,7 +290,21 @@ func evaluateUnary(operator token.Token, right interface{}) interface{} {
 
 	case token.BANG:
 		return !isTruthy(right)
+	case token.NOT:
+		rFloat, rok := right.(float64)
 
+		if !rok {
+			utils.RuntimeError(operator, "Operands must be numbers.")
+			return nil
+		}
+
+		// Check if the operands are actually integers
+		if float64(int64(rFloat)) != rFloat {
+			utils.RuntimeError(operator, "Bitwise operators can only be applied to integers.")
+			return nil
+		}
+
+		return ^int64(rFloat)
 	default:
 		utils.RuntimeError(operator, "Unknown unary operator: "+operator.Lexeme)
 		return nil

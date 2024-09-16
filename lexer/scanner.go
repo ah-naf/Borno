@@ -87,7 +87,7 @@ func (s *Scanner) scanToken() {
 	case '^':
 		s.addToken(token.XOR)
 	case '~':
-		s.addToken(token.NEGATION)
+		s.addToken(token.NOT)
 	case '*':
 		if s.match('*') {
 			s.addToken(token.POWER)

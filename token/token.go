@@ -23,7 +23,7 @@ const (
 	OR
 	XOR
 	POWER
-	NEGATION
+	NOT
 
 	// One or two character tokens
 	BANG

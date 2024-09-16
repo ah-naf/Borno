@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/ah-naf/crafting-interpreter/ast"
@@ -10,6 +11,18 @@ import (
 	"github.com/ah-naf/crafting-interpreter/utils"
 )
 
+// Helper function to convert both int64 and float64 to float64 for comparison
+func toFloat(val interface{}) interface{} {
+	switch v := val.(type) {
+	case int64:
+		return float64(v)
+	case float64:
+		return v
+	default:
+		return val
+	}
+}
+
 func TestEvalExpression(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -17,6 +30,20 @@ func TestEvalExpression(t *testing.T) {
 		expected interface{}
 		errorMsg string
 	}{
+		// New tests for bitwise operators
+		{"Bitwise AND", "5 & 3", int64(1), ""},
+		{"Bitwise OR", "5 | 3", int64(7), ""},
+		{"Bitwise XOR", "5 ^ 3", int64(6), ""},
+		{"Left Shift", "2 << 1", int64(4), ""},
+		{"Right Shift", "8 >> 2", int64(2), ""},
+		{"Power", "3 ** 4", int64(81), ""},
+
+		// Complex expressions involving bitwise and arithmetic
+		{"Complex Bitwise and Arithmetic", "(5 & 3) + (8 >> 2) * 3 - (3 ** 2)", float64(1 + 6 - 9), ""},
+		{"Complex Bitwise with Shift", "((5 | 2) << 1) + (8 ^ 3)", int64((7 << 1) + 11), ""}, // (7 << 1) + (8 ^ 3) -> 14 + 11
+		{"Complex Power and Shift", "2 ** (3 << 1)", int64(64), ""},                          // 2 ** (3 << 1) -> 2 ** 6 -> 64
+		{"Nested Grouping and Power", "((3 ** 2) + (8 >> 2)) * 2", float64(11 * 2), ""},
+
 		// Valid expressions
 		{"Addition of numbers", "1 + 2", 3.0, ""},
 		{"Subtraction of numbers", "5 - 2", 3.0, ""},
@@ -122,7 +149,9 @@ func TestEvalExpression(t *testing.T) {
 				if utils.HadRuntimeError {
 					t.Errorf("Unexpected runtime error for input '%s'", tt.input)
 				}
-				if result != tt.expected {
+
+				// Custom equality check for numbers
+				if !reflect.DeepEqual(toFloat(result), toFloat(tt.expected)) {
 					t.Errorf("For input '%s', expected %v, got %v", tt.input, tt.expected, result)
 				}
 			}
@@ -168,6 +197,8 @@ func TestEvalUnary(t *testing.T) {
 		{"Logical Not False", token.BANG, false, true, ""},
 		{"Logical Not Nil", token.BANG, nil, true, ""},
 		{"Logical Not Number", token.BANG, 42.0, false, ""},
+		// New test case for bitwise NOT (~)
+
 	}
 
 	for _, tt := range tests {
