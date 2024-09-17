@@ -112,6 +112,9 @@ func TestEvalExpression(t *testing.T) {
 
 		{"Mixed number and string concatenation", "2 + 2 + 1 + \"bar\"", "5bar", ""},
 		{"Mixed number and string concatenation 2", "\"bar\" + 2 + 2 + 1 + \"bar\"", "bar221bar", ""},
+
+		// Print Statement
+		{"Print statement", "print((5 & 3) + (8 >> 2) * 3 - (3 ** 2))", float64(1+6-9), ""},
 	}
 
 	for _, tt := range tests {
@@ -121,7 +124,7 @@ func TestEvalExpression(t *testing.T) {
 			utils.HadRuntimeError = false
 
 			// Lexical analysis
-			scanner := lexer.NewScanner(tt.input)
+			scanner := lexer.NewScanner(tt.input + ";")
 			tokens := scanner.ScanTokens()
 
 			// Check for lexical errors
@@ -139,7 +142,7 @@ func TestEvalExpression(t *testing.T) {
 			}
 
 			// Evaluation
-			result := Eval(expr)
+			result := Interpret(expr)
 
 			if tt.errorMsg != "" {
 				if !utils.HadRuntimeError {
@@ -151,8 +154,8 @@ func TestEvalExpression(t *testing.T) {
 				}
 
 				// Custom equality check for numbers
-				if !reflect.DeepEqual(toFloat(result), toFloat(tt.expected)) {
-					t.Errorf("For input '%s', expected %v, got %v", tt.input, tt.expected, result)
+				if !reflect.DeepEqual(toFloat(result[0]), toFloat(tt.expected)) {
+					t.Errorf("For input '%s', expected %v, got %v", tt.input, tt.expected, result[0])
 				}
 			}
 		})
@@ -175,8 +178,8 @@ func TestEvalLiteral(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			expr := &ast.Literal{Value: tt.literal}
-			result := Eval(expr)
-			if result != tt.expected {
+			result := Interpret([]ast.Stmt{expr})
+			if result[0] != tt.expected {
 				t.Errorf("Expected %v, got %v", tt.expected, result)
 			}
 		})
@@ -218,7 +221,7 @@ func TestEvalUnary(t *testing.T) {
 				Right:    operandExpr,
 			}
 
-			result := Eval(expr)
+			result := Interpret([]ast.Stmt{expr})
 			if tt.errorMsg != "" {
 				if !utils.HadRuntimeError {
 					t.Errorf("Expected runtime error '%s', but got result %v", tt.errorMsg, result)
@@ -227,7 +230,7 @@ func TestEvalUnary(t *testing.T) {
 				if utils.HadRuntimeError {
 					t.Errorf("Unexpected runtime error")
 				}
-				if result != tt.expected {
+				if result[0] != tt.expected {
 					t.Errorf("Expected %v, got %v", tt.expected, result)
 				}
 			}
@@ -281,7 +284,7 @@ func TestEvalBinary(t *testing.T) {
 				Right:    rightExpr,
 			}
 
-			result := Eval(expr)
+			result := Interpret([]ast.Stmt{expr})
 			if tt.errorMsg != "" {
 				if !utils.HadRuntimeError {
 					t.Errorf("Expected runtime error '%s', but got result %v", tt.errorMsg, result)
@@ -290,21 +293,11 @@ func TestEvalBinary(t *testing.T) {
 				if utils.HadRuntimeError {
 					t.Errorf("Unexpected runtime error")
 				}
-				if result != tt.expected {
+				if result[0] != tt.expected {
 					t.Errorf("Expected %v, got %v", tt.expected, result)
 				}
 			}
 		})
-	}
-}
-
-func TestEvalGrouping(t *testing.T) {
-	expr := &ast.Grouping{
-		Expression: &ast.Literal{Value: 42.0},
-	}
-	result := Eval(expr)
-	if result != 42.0 {
-		t.Errorf("Expected 42.0, got %v", result)
 	}
 }
 

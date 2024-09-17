@@ -9,27 +9,37 @@ import (
 	"github.com/ah-naf/crafting-interpreter/utils"
 )
 
-func Eval(expr ast.Expr) interface{} {
+func Interpret(statements []ast.Stmt) []interface{} {
+	var results []interface{}
+	for _, statement := range statements {
+		result := eval(statement)
+		results = append(results, result)
+		fmt.Println(result)
+	}
+	return results
+}
+
+func eval(expr ast.Expr) interface{} {
 	switch e := expr.(type) {
 	case *ast.Literal:
 		return e.Value
 
 	case *ast.Grouping:
-		return Eval(e.Expression)
+		return eval(e.Expression)
 
 	case *ast.Unary:
-		right := Eval(e.Right)
+		right := eval(e.Right)
 		if utils.HadRuntimeError {
 			return nil
 		}
 		return evaluateUnary(e.Operator, right)
 
 	case *ast.Binary:
-		left := Eval(e.Left)
+		left := eval(e.Left)
 		if utils.HadRuntimeError {
 			return nil
 		}
-		right := Eval(e.Right)
+		right := eval(e.Right)
 		if utils.HadRuntimeError {
 			return nil
 		}

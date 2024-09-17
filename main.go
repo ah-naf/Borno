@@ -65,12 +65,12 @@ func run(source string) {
 		return
 	}
 
-	result := interpreter.Eval(expr)
+	// fmt.Printf("%#v\n", expr)
+
+	interpreter.Interpret(expr)
 	if utils.HadRuntimeError {
 		return
 	}
-
-	fmt.Println(result)
 
 	// for _, token := range tokens {
 	// 	fmt.Println(token)

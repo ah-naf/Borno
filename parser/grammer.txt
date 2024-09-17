@@ -1,3 +1,12 @@
+program        → statement* EOF ;
+
+statement      → exprStmt
+               | printStmt ;
+
+exprStmt       → expression ";" ;
+printStmt      → "print" expression ";" ;
+
+
 expression     → bitwise_or ;
 bitwise_or     → bitwise_xor ( "|" bitwise_xor )* ;
 bitwise_xor    → bitwise_and ( "^" bitwise_and )* ;

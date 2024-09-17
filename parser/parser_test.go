@@ -9,7 +9,7 @@ import (
 )
 
 // Helper function to scan and parse an input expression
-func scanAndParse(input string) (ast.Expr, error) {
+func scanAndParse(input string) ([]ast.Stmt, error) {
 	// Scan tokens from input using the lexer
 	scanner := lexer.NewScanner(input)
 	tokens := scanner.ScanTokens()
@@ -142,8 +142,8 @@ func TestParseGrammar(t *testing.T) {
 				return
 			}
 
-			if expr.String() != tt.expected {
-				t.Errorf("Expected %s, but got %s", tt.expected, expr.String())
+			if expr[0].String() != tt.expected {
+				t.Errorf("Expected %s, but got %s", tt.expected, expr[0].String())
 			}
 		})
 	}

@@ -27,9 +27,46 @@ func NewParser(tokens []token.Token) *Parser {
 	}
 }
 
-func (p *Parser) Parse() (ast.Expr, error) {
-	return p.expression()
+func (p *Parser) Parse() ([]ast.Stmt, error) {
+	statments := []ast.Stmt{}
+
+	for !p.isAtEnd() {
+		stmt, err := p.statement()
+		if err != nil {
+			return nil, err
+		}
+		statments = append(statments, stmt)
+	}
+
+	return statments, nil
 }
+
+func (p *Parser) statement() (ast.Stmt, error) {
+	if p.match(token.PRINT) {
+		return p.printStatement()
+	}
+
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() (ast.Stmt, error) {
+	value, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	p.consume(token.SEMICOLON, "Expect ';' after value.")
+	return value, nil
+}
+
+func (p *Parser) expressionStatement() (ast.Stmt, error) {
+	value, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	p.consume(token.SEMICOLON, "Expect ';' after value.")
+	return value, nil
+}
+
 
 func (p *Parser) expression() (ast.Expr, error) {
 	// Change it to bitwiseOR
