@@ -15,7 +15,9 @@ func Interpret(statements []ast.Stmt, isRepl bool) []interface{} {
 	env := environment.NewEnvironment()
 
 	for _, statement := range statements {
+		// fmt.Printf("%#v\n", statement)
 		result := eval(statement, env, isRepl)
+		// fmt.Printf("%#v\n", result)
 		if utils.HadRuntimeError {
 			return nil // Stop execution if a runtime error occurred during evaluation
 		}

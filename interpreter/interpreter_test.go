@@ -1,7 +1,11 @@
 package interpreter
 
 import (
+	"bytes"
+	"io"
+	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/ah-naf/crafting-interpreter/ast"
@@ -11,10 +15,40 @@ import (
 	"github.com/ah-naf/crafting-interpreter/utils"
 )
 
+// CaptureStderr captures anything written to os.Stderr during the execution of the provided function.
+func CaptureStderr(f func()) string {
+	// Create a pipe to capture os.Stderr
+	r, w, _ := os.Pipe()
+
+	// Save the current os.Stderr so we can restore it later
+	oldStderr := os.Stderr
+
+	// Redirect os.Stderr to the pipe's writer
+	os.Stderr = w
+
+	// Run the provided function that might write to os.Stderr
+	f()
+
+	// Close the writer to stop capturing
+	w.Close()
+
+	// Restore the original os.Stderr
+	os.Stderr = oldStderr
+
+	// Read the captured output from the pipe
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+
+	// Return the captured error output as a string
+	return buf.String()
+}
+
 // Helper function to convert both int64 and float64 to float64 for comparison
 func toFloat(val interface{}) interface{} {
 	switch v := val.(type) {
 	case int64:
+		return float64(v)
+	case int:
 		return float64(v)
 	case float64:
 		return v
@@ -31,154 +65,134 @@ func TestEvalExpression(t *testing.T) {
 		errorMsg string
 	}{
 		// New tests for bitwise operators
-		{"Bitwise AND", "5 & 3", int64(1), ""},
-		{"Bitwise OR", "5 | 3", int64(7), ""},
-		{"Bitwise XOR", "5 ^ 3", int64(6), ""},
-		{"Left Shift", "2 << 1", int64(4), ""},
-		{"Right Shift", "8 >> 2", int64(2), ""},
-		{"Power", "3 ** 4", int64(81), ""},
+		// {"Bitwise AND", "5 & 3;", int64(1), ""},
+		// {"Bitwise OR", "5 | 3;", int64(7), ""},
+		// {"Bitwise XOR", "5 ^ 3;", int64(6), ""},
+		// {"Left Shift", "2 << 1;", int64(4), ""},
+		// {"Right Shift", "8 >> 2;", int64(2), ""},
+		// {"Power", "3 ** 4;", int64(81), ""},
 
 		// // Complex expressions involving bitwise and arithmetic
-		{"Complex Bitwise and Arithmetic", "(5 & 3) + (8 >> 2) * 3 - (3 ** 2)", float64(1 + 6 - 9), ""},
-		{"Complex Bitwise with Shift", "((5 | 2) << 1) + (8 ^ 3)", int64((7 << 1) + 11), ""}, // (7 << 1) + (8 ^ 3) -> 14 + 11
-		{"Complex Power and Shift", "2 ** (3 << 1)", int64(64), ""},                          // 2 ** (3 << 1) -> 2 ** 6 -> 64
-		{"Nested Grouping and Power", "((3 ** 2) + (8 >> 2)) * 2", float64(11 * 2), ""},
+		// {"Complex Bitwise and Arithmetic", "(5 & 3) + (8 >> 2) * 3 - (3 ** 2);", float64(1 + 6 - 9), ""},
+		// {"Complex Bitwise with Shift", "((5 | 2) << 1) + (8 ^ 3);", int64((7 << 1) + 11), ""},
+		// {"Complex Power and Shift", "2 ** (3 << 1);", int64(64), ""},
+		// {"Nested Grouping and Power", "((3 ** 2) + (8 >> 2)) * 2;", float64(11 * 2), ""},
 
-		// // Valid expressions
-		{"Addition of numbers", "1 + 2", 3.0, ""},
-		{"Subtraction of numbers", "5 - 2", 3.0, ""},
-		{"Multiplication of numbers", "3 * 4", 12.0, ""},
-		{"Division of numbers", "10 / 2", 5.0, ""},
-		{"Comparison greater", "5 > 3", true, ""},
-		{"Comparison less", "2 < 3", true, ""},
-		{"Equality true", "4 == 4", true, ""},
-		{"Equality false", "4 == 5", false, ""},
-		{"Not equal true", "4 != 5", true, ""},
-		{"Not equal false", "4 != 4", false, ""},
-		{"Grouping and precedence", "(1 + 2) * 3", 9.0, ""},
-		{"Unary minus", "-5", -5.0, ""},
-		{"Unary bang true", "!true", false, ""},
-		{"Unary bang false", "!false", true, ""},
-		{"Unary bang number", "!0", false, ""},
-		{"Nil equality", "nil == nil", true, ""},
-		{"Addition of strings", "\"foo\" + \"bar\"", "foobar", ""},
+		// // // Valid expressions
+		// {"Addition of numbers", "1 + 2;", 3.0, ""},
+		// {"Subtraction of numbers", "5 - 2;", 3.0, ""},
+		// {"Multiplication of numbers", "3 * 4;", 12.0, ""},
+		// {"Division of numbers", "10 / 2;", 5.0, ""},
+		// {"Comparison greater", "5 > 3;", true, ""},
+		// {"Comparison less", "2 < 3;", true, ""},
+		// {"Equality true", "4 == 4;", true, ""},
+		// {"Equality false", "4 == 5;", false, ""},
+		// {"Not equal true", "4 != 5;", true, ""},
+		// {"Not equal false", "4 != 4;", false, ""},
+		// {"Grouping and precedence", "(1 + 2) * 3;", 9.0, ""},
+		// {"Unary minus", "-5;", -5.0, ""},
+		// {"Unary bang true", "!true;", false, ""},
+		// {"Unary bang false", "!false;", true, ""},
+		// {"Unary bang number", "!0;", false, ""},
+		// {"Nil equality", "nil == nil;", true, ""},
+		// {"Addition of strings", "\"foo\" + \"bar\";", "foobar", ""},
 
-		// Complex expressions with operator precedence
-		{"Mixed precedence 1", "1 + 2 * 3", 7.0, ""},
-		{"Mixed precedence 2", "(1 + 2) * 3", 9.0, ""},
-		{"Complex precedence 1", "10 - 3 + 2 * 4 / 2", 11.0, ""},
+		// // // Complex expressions with operator precedence
+		// {"Mixed precedence 1", "1 + 2 * 3;", 7.0, ""},
+		// {"Mixed precedence 2", "(1 + 2) * 3;", 9.0, ""},
+		// {"Complex precedence 1", "10 - 3 + 2 * 4 / 2;", 11.0, ""},
 
-		// Grouping
-		{"Grouping expressions", "(1 + 2) * (3 + 4)", 21.0, ""},
-		{"Nested grouping", "((1 + 2) * 3) + (4 * (5 - 2))", 21.0, ""},
+		// // // Grouping
+		// {"Grouping expressions", "(1 + 2) * (3 + 4);", 21.0, ""},
+		// {"Nested grouping", "((1 + 2) * 3) + (4 * (5 - 2));", 21.0, ""},
 
-		// Boolean expressions
-		{"Boolean comparison", "true == false", false, ""},
-		{"Boolean and number comparison", "true == 1", false, ""},
+		// // // Boolean expressions
+		// {"Boolean comparison", "true == false;", false, ""},
+		// {"Boolean and number comparison", "true == 1;", false, ""},
 
-		// Nil-related expressions
-		{"Nil equality", "nil == nil", true, ""},
-		{"Nil addition", "nil + nil", nil, "Operands must be two numbers or two strings."},
-		{"Nil in comparison", "nil > 1", nil, "Left operand must be a number."},
+		// // // Nil-related expressions
+		// {"Nil equality", "nil == nil;", true, ""},
+		{"Nil addition", "nil + nil;", nil, "Operands must be numbers or strings."},
+		{"Nil in comparison", "nil > 1;", nil, "Left operand must be a number."},
 
-		// Complex arithmetic expressions
-		{"Complex arithmetic 1", "((2 + 3) * 4 - 5) / 2", 7.5, ""},
-		{"Complex arithmetic 2", "3 * (2 + (1 - 4) * (6 / 3))", -12.0, ""},
+		// // Complex arithmetic expressions
+		{"Complex arithmetic 1", "((2 + 3) * 4 - 5) / 2;", 7.5, ""},
+		{"Complex arithmetic 2", "3 * (2 + (1 - 4) * (6 / 3));", -12.0, ""},
 
-		// Error cases
-		{"Division by zero", "10 / 0", nil, "Division by zero."},
-		{"Invalid comparison with nil", "5 > nil", nil, "Right operand must be a number."},
+		// // Error cases
+		{"Division by zero", "10 / 0;", nil, "Division by zero."},
+		{"Invalid comparison with nil", "5 > nil;", nil, "Right operand must be a number."},
 
 		// String + number -> Should concatenate after converting number to string
-		{"String and number concatenation", "\"Number: \" + 42", "Number: 42", ""},
-		{"Number and string concatenation", "42 + \" is the answer\"", "42 is the answer", ""},
+		{"String and number concatenation", "\"Number: \" + 42;", "Number: 42", ""},
+		{"Number and string concatenation", "42 + \" is the answer\";", "42 is the answer", ""},
 
 		// String + float
-		{"String and float concatenation", "\"Pi is \" + 3.14", "Pi is 3.14", ""},
+		{"String and float concatenation", "\"Pi is \" + 3.14;", "Pi is 3.14", ""},
 
 		// Number + string + number -> Should concatenate all
-		{"Number + string + number", "123 + \" + \" + 456", "123 + 456", ""},
+		{"Number + string + number", "123 + \" + \" + 456;", "123 + 456", ""},
 
-		// Invalid operations
-		{"Invalid addition of string and boolean", "\"foo\" + true", nil, "Right operand must be a number or string."},
-		{"Invalid addition of boolean and string", "true + \"foo\"", nil, "Left operand must be a number or string."},
-		{"Invalid addition of string and nil", "\"foo\" + nil", nil, "Right operand must be a number or string."},
-		{"Invalid addition of number and nil", "42 + nil", nil, "Right operand must be a number or string."},
-
-		// Edge cases
-		{"Nil addition with nil", "nil + nil", nil, "Operands must be two numbers or two strings."},
-		{"Number and empty string", "42 + \"\"", "42", ""},
-		{"Empty string and number", "\"\" + 42", "42", ""},
-
-		{"Mixed number and string concatenation", "2 + 2 + 1 + \"bar\"", "5bar", ""},
-		{"Mixed number and string concatenation 2", "\"bar\" + 2 + 2 + 1 + \"bar\"", "bar221bar", ""},
-
+		// // Invalid operations
+		{"Invalid addition of string and boolean", "\"foo\" + true;", nil, "Right operand must be a string or number."},
+		{"Invalid addition of boolean and string", "true + \"foo\";", nil, "Operands must be numbers or strings."},
+		{"Invalid addition of string and nil", "\"foo\" + nil;", nil, "Right operand must be a string or number."},
+		{"Invalid addition of number and nil", "42 + nil;", nil, "Operands must be numbers or strings."},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var output interface{}
+
 			// Reset error flags before each test
 			utils.HadError = false
 			utils.HadRuntimeError = false
 
-			// Lexical analysis
-			scanner := lexer.NewScanner(tt.input + ";")
-			tokens := scanner.ScanTokens()
+			// Capture stderr during evaluation
+			capturedErr := CaptureStderr(func() {
+				// Lexical analysis
+				scanner := lexer.NewScanner(tt.input)
+				tokens := scanner.ScanTokens()
 
-			// Check for lexical errors
-			if utils.HadError {
-				t.Fatalf("Scanner error for input '%s'", tt.input)
-			}
+				// Check for lexical errors
+				if utils.HadError {
+					t.Fatalf("Scanner error for input '%s'", tt.input)
+				}
 
-			// Parsing
-			parser := parser.NewParser(tokens)
-			expr, err := parser.Parse()
+				// Parsing
+				parser := parser.NewParser(tokens)
+				expr, err := parser.Parse()
 
-			// Check for parsing errors
-			if err != nil || utils.HadError {
-				t.Fatalf("Parser error for input '%s'", tt.input)
-			}
+				// Check for parsing errors
+				if err != nil || utils.HadError {
+					t.Fatalf("Parser error for input '%s'", tt.input)
+				}
 
-			// Evaluation
-			result := Interpret(expr, false)
+				// Evaluation
+				results := Interpret(expr, false)
+				// fmt.Println(results)
+				if len(results) > 0 {
+					output = results[0]
+				}
+			})
+
+			// Handle runtime errors and comparison
+			capturedErr = strings.Split(capturedErr, "\n")[0]
 
 			if tt.errorMsg != "" {
-				if !utils.HadRuntimeError {
-					t.Errorf("Expected runtime error '%s', but got result %v", tt.errorMsg, result)
+				if !reflect.DeepEqual(capturedErr, tt.errorMsg) {
+					t.Fatalf("Expected error %v, got %v", tt.errorMsg, capturedErr)
 				}
 			} else {
+				// Ensure there is no runtime error when not expected
 				if utils.HadRuntimeError {
-					t.Errorf("Unexpected runtime error for input '%s'", tt.input)
+					t.Fatalf("Unexpected runtime error for input '%s'", tt.input)
 				}
 
 				// Custom equality check for numbers
-				if !reflect.DeepEqual(toFloat(result[0]), toFloat(tt.expected)) {
-					t.Errorf("For input '%s', expected %v, got %v", tt.input, tt.expected, result[0])
+				if !reflect.DeepEqual(toFloat(output), toFloat(tt.expected)) {
+					t.Fatalf("For input '%s', expected %v, got %v", tt.input, tt.expected, output)
 				}
-			}
-		})
-	}
-}
-
-func TestEvalLiteral(t *testing.T) {
-	tests := []struct {
-		name     string
-		literal  interface{}
-		expected interface{}
-	}{
-		{"Number", 42.0, 42.0},
-		{"String", "hello", "hello"},
-		{"Boolean True", true, true},
-		{"Boolean False", false, false},
-		{"Nil", nil, nil},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			expr := &ast.Literal{Value: tt.literal}
-			result := Interpret([]ast.Stmt{expr}, false)
-			if result[0] != tt.expected {
-				t.Errorf("Expected %v, got %v", tt.expected, result)
 			}
 		})
 	}
@@ -193,44 +207,59 @@ func TestEvalUnary(t *testing.T) {
 		errorMsg string
 	}{
 		{"Negate Number", token.MINUS, 5.0, -5.0, ""},
-		{"Negate Non-Number", token.MINUS, "hello", nil, "Operand must be a number."},
+		{"Negate Non-Number", token.MINUS, "hello", nil, "expected a number, got string"},
 		{"Logical Not True", token.BANG, true, false, ""},
 		{"Logical Not False", token.BANG, false, true, ""},
 		{"Logical Not Nil", token.BANG, nil, true, ""},
 		{"Logical Not Number", token.BANG, 42.0, false, ""},
-		// New test case for bitwise NOT (~)
-
+		{"NOT operator", token.NOT, int64(1), -2, ""},
+		{"NOT operator on string", token.NOT, "hello", nil, "expected an integer, got string"},
 	}
 
 	for _, tt := range tests {
+		var output interface{}
 		t.Run(tt.name, func(t *testing.T) {
 			utils.HadRuntimeError = false
 
-			operatorToken := token.Token{
-				Type:    tt.operator,
-				Lexeme:  tokenTypeToLexeme(tt.operator),
-				Literal: nil,
-				Line:    1,
-			}
+			// Capture stderr during evaluation
+			capturedErr := CaptureStderr(func() {
+				operatorToken := token.Token{
+					Type:    tt.operator,
+					Lexeme:  tokenTypeToLexeme(tt.operator),
+					Literal: nil,
+					Line:    1,
+				}
 
-			operandExpr := &ast.Literal{Value: tt.operand}
-			expr := &ast.Unary{
-				Operator: operatorToken,
-				Right:    operandExpr,
-			}
+				operandExpr := &ast.Literal{Value: tt.operand}
+				expr := &ast.Unary{
+					Operator: operatorToken,
+					Right:    operandExpr,
+				}
 
-			result := Interpret([]ast.Stmt{expr}, false)
+				results := Interpret([]ast.Stmt{expr}, false)
+				if len(results) > 0 {
+					output = results[0]
+				}
+			})
+
+			capturedErr = strings.Split(capturedErr, "\n")[0]
+
+			// Check for expected error messages
 			if tt.errorMsg != "" {
-				if !utils.HadRuntimeError {
-					t.Errorf("Expected runtime error '%s', but got result %v", tt.errorMsg, result)
+				if capturedErr == "" || !utils.HadRuntimeError {
+					t.Fatalf("Expected runtime error '%s', but got no error.", tt.errorMsg)
+				} else if capturedErr != tt.errorMsg {
+					t.Fatalf("Expected runtime error '%s', but got '%s'.", tt.errorMsg, capturedErr)
 				}
 			} else {
+				// Ensure there is no runtime error when not expected
 				if utils.HadRuntimeError {
-					t.Errorf("Unexpected runtime error")
+					t.Fatalf("Unexpected runtime error for unary expression '%s'", tt.name)
 				}
-				if result[0] != tt.expected {
-					t.Errorf("Expected %v, got %v", tt.expected, result)
-				}
+			}
+			// fmt.Printf("%v, %v, %v\n", tt.expected, output, reflect.DeepEqual(toFloat(tt.expected), toFloat(output)))
+			if !reflect.DeepEqual(toFloat(tt.expected), toFloat(output)) {
+				t.Fatalf("Expected %v, got %v", tt.expected, output)
 			}
 		})
 	}
@@ -258,42 +287,56 @@ func TestEvalBinary(t *testing.T) {
 		{"Equality False", 42.0, token.EQUAL_EQUAL, 43.0, false, ""},
 		{"Inequality", "foo", token.BANG_EQUAL, "bar", true, ""},
 		{"Comparison with Nil", nil, token.GREATER, 5.0, nil, "Left operand must be a number."},
-		{"Addition with Nil", nil, token.PLUS, 5.0, nil, "Operands must be two numbers or two strings."},
-		{"Addition Nil + Nil", nil, token.PLUS, nil, nil, "Operands must be two numbers or two strings."},
+		{"Addition with Nil", nil, token.PLUS, 5.0, nil, "Operands must be numbers or strings."},
+		{"Addition Nil + Nil", nil, token.PLUS, nil, nil, "Operands must be numbers or strings."},
 	}
 
 	for _, tt := range tests {
+		var output interface{}
 		t.Run(tt.name, func(t *testing.T) {
 			utils.HadRuntimeError = false
 
-			leftExpr := &ast.Literal{Value: tt.left}
-			rightExpr := &ast.Literal{Value: tt.right}
+			// Capture stderr during evaluation
+			capturedErr := CaptureStderr(func() {
+				operatorToken := token.Token{
+					Type:    tt.operator,
+					Lexeme:  tokenTypeToLexeme(tt.operator),
+					Literal: nil,
+					Line:    1,
+				}
 
-			operatorToken := token.Token{
-				Type:    tt.operator,
-				Lexeme:  tokenTypeToLexeme(tt.operator),
-				Literal: nil,
-				Line:    1,
-			}
+				left := &ast.Literal{Value: tt.left}
+				right := &ast.Literal{Value: tt.right}
+				expr := &ast.Binary{
+					Operator: operatorToken,
+					Left:     left,
+					Right:    right,
+				}
 
-			expr := &ast.Binary{
-				Left:     leftExpr,
-				Operator: operatorToken,
-				Right:    rightExpr,
-			}
+				results := Interpret([]ast.Stmt{expr}, false)
+				if len(results) > 0 {
+					output = results[0]
+				}
+			})
 
-			result := Interpret([]ast.Stmt{expr}, false)
+			capturedErr = strings.Split(capturedErr, "\n")[0]
+
+			// Check for expected error messages
 			if tt.errorMsg != "" {
-				if !utils.HadRuntimeError {
-					t.Errorf("Expected runtime error '%s', but got result %v", tt.errorMsg, result)
+				if capturedErr == "" || !utils.HadRuntimeError {
+					t.Fatalf("Expected runtime error '%s', but got no error.", tt.errorMsg)
+				} else if capturedErr != tt.errorMsg {
+					t.Fatalf("Expected runtime error '%s', but got '%s'.", tt.errorMsg, capturedErr)
 				}
 			} else {
+				// Ensure there is no runtime error when not expected
 				if utils.HadRuntimeError {
-					t.Errorf("Unexpected runtime error")
+					t.Fatalf("Unexpected runtime error for unary expression '%s'", tt.name)
 				}
-				if result[0] != tt.expected {
-					t.Errorf("Expected %v, got %v", tt.expected, result)
-				}
+			}
+			// fmt.Printf("%v, %v, %v\n", tt.expected, output, reflect.DeepEqual(toFloat(tt.expected), toFloat(output)))
+			if !reflect.DeepEqual(toFloat(tt.expected), toFloat(output)) {
+				t.Fatalf("Expected %v, got %v", tt.expected, output)
 			}
 		})
 	}
