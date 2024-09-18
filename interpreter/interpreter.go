@@ -16,6 +16,9 @@ func Interpret(statements []ast.Stmt, isRepl bool) []interface{} {
 
 	for _, statement := range statements {
 		result := eval(statement, env, isRepl)
+		if utils.HadRuntimeError {
+			return nil // Stop execution if a runtime error occurred during evaluation
+		}
 		results = append(results, result)
 	}
 
@@ -26,6 +29,9 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) interface{} 
 	switch e := expr.(type) {
 	case *ast.PrintStatement:
 		value := eval(e.Expression, env, isRepl)
+		if utils.HadRuntimeError {
+			return nil // Stop execution if a runtime error occurred during evaluation
+		}
 		fmt.Println(stringify(value))
 		// Return value if you want to make print return the expression
 		return nil
