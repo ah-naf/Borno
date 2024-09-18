@@ -27,7 +27,7 @@ func runFile(path string) {
 	if err != nil {
 		panic(err)
 	}
-	run(string(rawContent))
+	run(string(rawContent), false)
 
 	if utils.HadError {
 		os.Exit(65)
@@ -47,14 +47,14 @@ func runPrompt() {
 		}
 
 		line := scanner.Text()
-		run(line)
+		run(line, true)
 
 		utils.HadError = false
 		utils.HadRuntimeError = false
 	}
 }
 
-func run(source string) {
+func run(source string, isRepl bool) {
 	scanner := lexer.NewScanner(source)
 	tokens := scanner.ScanTokens()
 
@@ -65,14 +65,12 @@ func run(source string) {
 		return
 	}
 
-	// fmt.Printf("%#v\n", expr)
-
-	interpreter.Interpret(expr)
+	interpreter.Interpret(expr, isRepl)
 	if utils.HadRuntimeError {
 		return
 	}
 
-	// for _, token := range tokens {
+	// for _, token := range expr {
 	// 	fmt.Println(token)
 	// }
 	// fmt.Println(expr)

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/ah-naf/crafting-interpreter/token"
 )
@@ -22,11 +23,11 @@ func GlobalErrorToken(t token.Token, message string) {
 }
 
 func report(line int, where, message string) {
-	fmt.Printf("[line %d] Error%s: %s\n", line, where, message)
+	fmt.Fprintf(os.Stderr, "[line %d] Error%s: %s\n", line, where, message)
 	HadError = true
 }
 
 func RuntimeError(token token.Token, message string) {
-	fmt.Printf("%s\n[line %d]\n", message, token.Line)
+	fmt.Fprintf(os.Stderr, "%s\n[line %d]\n", message, token.Line)
 	HadRuntimeError = true
 }

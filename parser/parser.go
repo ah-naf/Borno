@@ -31,7 +31,7 @@ func (p *Parser) Parse() ([]ast.Stmt, error) {
 	statments := []ast.Stmt{}
 
 	for !p.isAtEnd() {
-		stmt, err := p.statement()
+		stmt, err := p.declaration()
 		if err != nil {
 			return nil, err
 		}
@@ -39,6 +39,31 @@ func (p *Parser) Parse() ([]ast.Stmt, error) {
 	}
 
 	return statments, nil
+}
+
+func (p *Parser) declaration() (ast.Stmt, error) {
+	if p.match(token.VAR) {
+		return p.varDeclaration()
+	}
+	return p.statement()
+}
+
+func (p *Parser) varDeclaration() (ast.Stmt, error) {
+	name, err := p.consume(token.IDENTIFIER, "Expect variable name.")
+	if err != nil {
+		return nil, err
+	}
+
+	var initializer ast.Stmt
+	if p.match(token.EQUAL) {
+		val, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+		initializer = val
+	}
+	p.consume(token.SEMICOLON, "Expect ';' after variable declaration.")
+	return &ast.VarStmt{Name: name, Initializer: initializer}, nil
 }
 
 func (p *Parser) statement() (ast.Stmt, error) {
@@ -55,7 +80,7 @@ func (p *Parser) printStatement() (ast.Stmt, error) {
 		return nil, err
 	}
 	p.consume(token.SEMICOLON, "Expect ';' after value.")
-	return value, nil
+	return &ast.PrintStatement{Expression: value}, nil
 }
 
 func (p *Parser) expressionStatement() (ast.Stmt, error) {
@@ -64,9 +89,8 @@ func (p *Parser) expressionStatement() (ast.Stmt, error) {
 		return nil, err
 	}
 	p.consume(token.SEMICOLON, "Expect ';' after value.")
-	return value, nil
+	return &ast.ExpressionStatement{Expression: value}, nil
 }
-
 
 func (p *Parser) expression() (ast.Expr, error) {
 	// Change it to bitwiseOR
@@ -88,7 +112,7 @@ func (p *Parser) bitwiseOR() (ast.Expr, error) {
 			return nil, err
 		}
 
-		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	return expr, nil
@@ -109,9 +133,8 @@ func (p *Parser) bitwiseXOR() (ast.Expr, error) {
 			return nil, err
 		}
 
-		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
-
 	return expr, nil
 }
 
@@ -130,9 +153,8 @@ func (p *Parser) bitwiseAND() (ast.Expr, error) {
 			return nil, err
 		}
 
-		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
-
 	return expr, nil
 }
 
@@ -151,7 +173,7 @@ func (p *Parser) equality() (ast.Expr, error) {
 			return nil, err
 		}
 
-		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	return expr, nil
@@ -172,7 +194,7 @@ func (p *Parser) comparison() (ast.Expr, error) {
 			return nil, err
 		}
 
-		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	return expr, nil
@@ -193,7 +215,7 @@ func (p *Parser) shift() (ast.Expr, error) {
 			return nil, err
 		}
 
-		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	return expr, nil
@@ -214,7 +236,7 @@ func (p *Parser) term() (ast.Expr, error) {
 			return nil, err
 		}
 
-		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	return expr, nil
@@ -235,7 +257,7 @@ func (p *Parser) factor() (ast.Expr, error) {
 			return nil, err
 		}
 
-		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	return expr, nil
@@ -256,7 +278,7 @@ func (p *Parser) power() (ast.Expr, error) {
 			return nil, err
 		}
 
-		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	return expr, nil
@@ -271,7 +293,7 @@ func (p *Parser) unary() (ast.Expr, error) {
 			return nil, err
 		}
 
-		return &ast.Unary{Operator: operator, Right: right}, nil
+		return &ast.Unary{Operator: operator, Right: right, Line: operator.Line}, nil
 	}
 
 	return p.primary()
@@ -279,17 +301,21 @@ func (p *Parser) unary() (ast.Expr, error) {
 
 func (p *Parser) primary() (ast.Expr, error) {
 	if p.match(token.FALSE) {
-		return &ast.Literal{Value: false}, nil
+		return &ast.Literal{Value: false, Line: p.previous().Line}, nil
 	}
 	if p.match(token.TRUE) {
-		return &ast.Literal{Value: true}, nil
+		return &ast.Literal{Value: true, Line: p.previous().Line}, nil
 	}
 	if p.match(token.NIL) {
-		return &ast.Literal{Value: nil}, nil
+		return &ast.Literal{Value: nil, Line: p.previous().Line}, nil
 	}
 
 	if p.match(token.NUMBER, token.STRING) {
-		return &ast.Literal{Value: p.previous().Literal}, nil
+		return &ast.Literal{Value: p.previous().Literal, Line: p.previous().Line}, nil
+	}
+
+	if p.match(token.IDENTIFIER) {
+		return &ast.Identifier{Name: p.previous().Lexeme, Line: p.previous().Line}, nil
 	}
 
 	if p.match(token.LEFT_PAREN) {
@@ -305,7 +331,7 @@ func (p *Parser) primary() (ast.Expr, error) {
 			return nil, err
 		}
 
-		return &ast.Grouping{Expression: expr}, nil
+		return &ast.Grouping{Expression: expr, Line: p.advance().Line}, nil
 	}
 
 	return nil, p.error(p.peek(), "Unexpected token. Expect expression.")

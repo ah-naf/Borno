@@ -1,1 +1,2 @@
-print ~true;
+var a = 2 + 2;
+print b;

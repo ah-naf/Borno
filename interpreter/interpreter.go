@@ -5,48 +5,78 @@ import (
 	"math"
 
 	"github.com/ah-naf/crafting-interpreter/ast"
+	"github.com/ah-naf/crafting-interpreter/environment"
 	"github.com/ah-naf/crafting-interpreter/token"
 	"github.com/ah-naf/crafting-interpreter/utils"
 )
 
-func Interpret(statements []ast.Stmt) []interface{} {
+func Interpret(statements []ast.Stmt, isRepl bool) []interface{} {
 	var results []interface{}
+	env := environment.NewEnvironment()
+
 	for _, statement := range statements {
-		result := eval(statement)
+		result := eval(statement, env, isRepl)
 		results = append(results, result)
-		fmt.Println(result)
 	}
+
 	return results
 }
 
-func eval(expr ast.Expr) interface{} {
+func eval(expr ast.Expr, env *environment.Environment, isRepl bool) interface{} {
 	switch e := expr.(type) {
+	case *ast.PrintStatement:
+		value := eval(e.Expression, env, isRepl)
+		fmt.Println(stringify(value))
+		return nil
+
+	case *ast.ExpressionStatement:
+		value := eval(e.Expression, env, isRepl)
+		if isRepl {
+			fmt.Println(stringify(value))
+		}
+		return value
+
 	case *ast.Literal:
 		return e.Value
 
 	case *ast.Grouping:
-		return eval(e.Expression)
+		return eval(e.Expression, env, isRepl)
 
 	case *ast.Unary:
-		right := eval(e.Right)
-		if utils.HadRuntimeError {
-			return nil
-		}
+		right := eval(e.Right, env, isRepl)
+
 		return evaluateUnary(e.Operator, right)
 
 	case *ast.Binary:
-		left := eval(e.Left)
-		if utils.HadRuntimeError {
-			return nil
-		}
-		right := eval(e.Right)
+		left := eval(e.Left, env, isRepl)
+
+		right := eval(e.Right, env, isRepl)
 		if utils.HadRuntimeError {
 			return nil
 		}
 		return evaluateBinary(left, e.Operator, right)
 
+	case *ast.VarStmt:
+		var value interface{}
+
+		if e.Initializer != nil {
+			value = eval(e.Initializer, env, isRepl)
+		}
+
+		env.Define(e.Name.Lexeme, value)
+		return nil
+
+	case *ast.Identifier:
+		val, err := env.Get(e.Name)
+		if err != nil {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Variable "+e.Name+" is not defined.")
+			return nil
+		}
+		return val
+
 	default:
-		utils.RuntimeError(token.Token{Line: 0}, "Unknown expression type.")
+		lineNumber := getLineNumber(expr)
+		utils.RuntimeError(token.Token{Line: lineNumber}, "Unknown expression type.")
 		return nil
 	}
 }
@@ -333,4 +363,30 @@ func isTruthy(value interface{}) bool {
 
 func isEqual(a, b interface{}) bool {
 	return a == b
+}
+
+func getLineNumber(expr ast.Expr) int {
+	// fmt.Printf("%#v\n", expr)
+	switch e := expr.(type) {
+	case *ast.Binary:
+		return e.Line
+	case *ast.Unary:
+		return e.Line
+	case *ast.Literal:
+		return e.Line
+	case *ast.Grouping:
+		return e.Line
+	case *ast.VarStmt:
+		return e.Name.Line
+	// Add cases for other expression types if necessary
+	default:
+		return 0 // Return 0 if line number is not available
+	}
+}
+
+func stringify(value interface{}) string {
+	if value == nil {
+		return "nil"
+	}
+	return fmt.Sprintf("%v", value)
 }
