@@ -58,10 +58,10 @@ func (u *Unary) String() string {
 }
 
 type Identifier struct {
-	Name string
+	Name token.Token
 	Line int
 }
 
 func (i *Identifier) String() string {
-	return i.Name
+	return i.Name.Lexeme
 }

@@ -11,7 +11,8 @@ exprStmt       → expression ";" ;
 printStmt      → "print" expression ";" ;
 
 
-expression     → bitwise_or ;
+expression     → assignment ;
+assignment     → IDENTIFIER "=" assignment | bitwise_or ;
 bitwise_or     → bitwise_xor ( "|" bitwise_xor )* ;
 bitwise_xor    → bitwise_and ( "^" bitwise_and )* ;
 bitwise_and    → equality ( "&" equality )* ;

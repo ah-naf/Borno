@@ -25,6 +25,12 @@ type VarStmt struct {
 	Line int
 }
 
+type AssignmentStmt struct {
+	Name  token.Token
+	Value Expr
+	Line  int
+}
+
 // String method for PrintStatement
 func (p *PrintStatement) String() string {
 	return fmt.Sprintf("(print %s)", p.Expression.String()) // Return string representation of print statement
@@ -37,4 +43,8 @@ func (e *ExpressionStatement) String() string {
 
 func (v *VarStmt) String() string {
 	return fmt.Sprintf("var %s = %v", v.Name.Lexeme, v.Initializer)
+}
+
+func (a *AssignmentStmt) String() string {
+	return fmt.Sprintf("(%s = %s)", a.Name.Lexeme, a.Value.String())
 }

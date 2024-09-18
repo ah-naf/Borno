@@ -93,8 +93,42 @@ func (p *Parser) expressionStatement() (ast.Stmt, error) {
 }
 
 func (p *Parser) expression() (ast.Expr, error) {
-	// Change it to bitwiseOR
-	return p.bitwiseOR()
+	return p.assignment()
+}
+
+func (p *Parser) assignment() (ast.Expr, error) {
+    // Parse the expression on the left-hand side of the assignment
+    expr, err := p.bitwiseOR()
+    if err != nil {
+        return nil, err
+    }
+
+    // Check if the current token is an assignment operator
+    if p.match(token.EQUAL) {
+        equalOperator := p.previous()
+
+        // Parse the expression on the right-hand side of the assignment
+        value, err := p.assignment()
+        if err != nil {
+            return nil, err
+        }
+
+        // Ensure that the left-hand side is a valid assignment target
+        if identifier, ok := expr.(*ast.Identifier); ok {
+            // Return the AssignmentStmt with the identifier as the target and the value as the expression
+            return &ast.AssignmentStmt{
+                Name:  identifier.Name, // Set the name of the variable
+                Value: value,
+                Line:  equalOperator.Line,
+            }, nil
+        }
+
+        // If the left-hand side is not a valid assignment target, throw an error
+        p.error(equalOperator, "Invalid assignment target.")
+    }
+
+    // If no assignment, return the original expression
+    return expr, nil
 }
 
 func (p *Parser) bitwiseOR() (ast.Expr, error) {
@@ -315,7 +349,7 @@ func (p *Parser) primary() (ast.Expr, error) {
 	}
 
 	if p.match(token.IDENTIFIER) {
-		return &ast.Identifier{Name: p.previous().Lexeme, Line: p.previous().Line}, nil
+		return &ast.Identifier{Name: p.previous(), Line: p.previous().Line}, nil
 	}
 
 	if p.match(token.LEFT_PAREN) {

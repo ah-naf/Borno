@@ -27,6 +27,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) interface{} 
 	case *ast.PrintStatement:
 		value := eval(e.Expression, env, isRepl)
 		fmt.Println(stringify(value))
+		// Return value if you want to make print return the expression
 		return nil
 
 	case *ast.ExpressionStatement:
@@ -66,10 +67,15 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) interface{} 
 		env.Define(e.Name.Lexeme, value)
 		return nil
 
+	case *ast.AssignmentStmt:
+		val := eval(e.Value, env, isRepl)
+		env.Assign(e.Name, val)
+		return val
+
 	case *ast.Identifier:
-		val, err := env.Get(e.Name)
+		val, err := env.Get(e.Name.Lexeme)
 		if err != nil {
-			utils.RuntimeError(token.Token{Line: e.Line}, "Variable "+e.Name+" is not defined.")
+			utils.RuntimeError(token.Token{Line: e.Line}, "Variable "+e.Name.Lexeme+" is not defined.")
 			return nil
 		}
 		return val

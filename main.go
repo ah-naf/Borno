@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 
+	"github.com/ah-naf/crafting-interpreter/interpreter"
 	"github.com/ah-naf/crafting-interpreter/lexer"
 	"github.com/ah-naf/crafting-interpreter/parser"
 	"github.com/ah-naf/crafting-interpreter/utils"
@@ -64,13 +66,24 @@ func run(source string, isRepl bool) {
 		return
 	}
 
-	// interpreter.Interpret(expr, isRepl)
+	interpreter.Interpret(expr, isRepl)
 	if utils.HadRuntimeError {
 		return
 	}
 
-	for _, token := range expr {
-		fmt.Println(token)
+	for _, stmt := range expr {
+		prettyPrint(stmt) // Use %#v to print all the nested fields and structs
 	}
 	// fmt.Println(expr)
+}
+
+func prettyPrint(v interface{}) {
+	// Marshal the struct to JSON with indentation
+	data, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	// Print the resulting JSON string
+	fmt.Println(string(data))
 }

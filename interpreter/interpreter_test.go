@@ -112,6 +112,7 @@ func TestEvalExpression(t *testing.T) {
 
 		{"Mixed number and string concatenation", "2 + 2 + 1 + \"bar\"", "5bar", ""},
 		{"Mixed number and string concatenation 2", "\"bar\" + 2 + 2 + 1 + \"bar\"", "bar221bar", ""},
+
 	}
 
 	for _, tt := range tests {
