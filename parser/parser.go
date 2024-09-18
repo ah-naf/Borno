@@ -49,21 +49,54 @@ func (p *Parser) declaration() (ast.Stmt, error) {
 }
 
 func (p *Parser) varDeclaration() (ast.Stmt, error) {
-	name, err := p.consume(token.IDENTIFIER, "Expect variable name.")
+	var declarations []ast.VarStmt
+	initialLine := p.peek().Line // Track the line number at the start of the declaration
+
+	for {
+		// Parse the variable name
+		name, err := p.consume(token.IDENTIFIER, "Expect variable name.")
+		if err != nil {
+			return nil, err
+		}
+
+		// Optional initializer
+		var initializer ast.Expr
+		if p.match(token.EQUAL) {
+			val, err := p.expression()
+			if err != nil {
+				return nil, err
+			}
+			initializer = val
+		}
+
+		// Create a VarStmt for each variable
+		declaration := &ast.VarStmt{Name: name, Initializer: initializer, Line: name.Line}
+		declarations = append(declarations, *declaration)
+
+		// Check for newline and semicolon before proceeding to the next variable
+		if p.peek().Line != initialLine {
+			return nil, p.error(p.peek(), "Expect ';' before newline.")
+		}
+
+		// If no more commas, break out of the loop
+		if !p.match(token.COMMA) {
+			break
+		}
+	}
+
+	// Ensure semicolon at the end of the declaration
+	_, err := p.consume(token.SEMICOLON, "Expect ';' after variable declaration.")
 	if err != nil {
 		return nil, err
 	}
 
-	var initializer ast.Stmt
-	if p.match(token.EQUAL) {
-		val, err := p.expression()
-		if err != nil {
-			return nil, err
-		}
-		initializer = val
+	// If there's only one variable, return it directly
+	if len(declarations) == 1 {
+		return &declarations[0], nil
 	}
-	p.consume(token.SEMICOLON, "Expect ';' after variable declaration.")
-	return &ast.VarStmt{Name: name, Initializer: initializer}, nil
+
+	// If there are multiple variables, return a VarListStmt
+	return &ast.VarListStmt{Declarations: declarations}, nil
 }
 
 func (p *Parser) statement() (ast.Stmt, error) {

@@ -74,7 +74,22 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) interface{} 
 				return nil
 			}
 		}
-		env.Define(e.Name.Lexeme, value)
+		_, err := env.Get(e.Name.Lexeme)
+		if err != nil {
+			env.Define(e.Name.Lexeme, value)
+		} else {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Cannot redeclare variable "+e.Name.Lexeme+".")
+			return nil
+		}
+		return nil
+
+	case *ast.VarListStmt:
+		for _, decl := range e.Declarations {
+			eval(&decl, env, isRepl)
+			if utils.HadRuntimeError {
+				return nil
+			}
+		}
 		return nil
 
 	case *ast.AssignmentStmt:

@@ -25,6 +25,10 @@ type VarStmt struct {
 	Line int
 }
 
+type VarListStmt struct {
+	Declarations []VarStmt
+}
+
 type AssignmentStmt struct {
 	Name  token.Token
 	Value Expr
@@ -47,6 +51,14 @@ func (e *ExpressionStatement) String() string {
 
 func (v *VarStmt) String() string {
 	return fmt.Sprintf("var %s = %v", v.Name.Lexeme, v.Initializer)
+}
+
+func (v *VarListStmt) String() string {
+	output := ""
+	for _, varStmt := range v.Declarations {
+		output += fmt.Sprintf("var %s = %v\n", varStmt.Name.Lexeme, varStmt.Initializer)
+	}
+	return output
 }
 
 func (a *AssignmentStmt) String() string {
