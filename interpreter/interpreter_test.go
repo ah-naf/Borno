@@ -38,13 +38,13 @@ func TestEvalExpression(t *testing.T) {
 		{"Right Shift", "8 >> 2", int64(2), ""},
 		{"Power", "3 ** 4", int64(81), ""},
 
-		// Complex expressions involving bitwise and arithmetic
+		// // Complex expressions involving bitwise and arithmetic
 		{"Complex Bitwise and Arithmetic", "(5 & 3) + (8 >> 2) * 3 - (3 ** 2)", float64(1 + 6 - 9), ""},
 		{"Complex Bitwise with Shift", "((5 | 2) << 1) + (8 ^ 3)", int64((7 << 1) + 11), ""}, // (7 << 1) + (8 ^ 3) -> 14 + 11
 		{"Complex Power and Shift", "2 ** (3 << 1)", int64(64), ""},                          // 2 ** (3 << 1) -> 2 ** 6 -> 64
 		{"Nested Grouping and Power", "((3 ** 2) + (8 >> 2)) * 2", float64(11 * 2), ""},
 
-		// Valid expressions
+		// // Valid expressions
 		{"Addition of numbers", "1 + 2", 3.0, ""},
 		{"Subtraction of numbers", "5 - 2", 3.0, ""},
 		{"Multiplication of numbers", "3 * 4", 12.0, ""},
@@ -112,9 +112,6 @@ func TestEvalExpression(t *testing.T) {
 
 		{"Mixed number and string concatenation", "2 + 2 + 1 + \"bar\"", "5bar", ""},
 		{"Mixed number and string concatenation 2", "\"bar\" + 2 + 2 + 1 + \"bar\"", "bar221bar", ""},
-
-		// Print Statement
-		{"Print statement", "print((5 & 3) + (8 >> 2) * 3 - (3 ** 2))", float64(1+6-9), ""},
 	}
 
 	for _, tt := range tests {
@@ -142,7 +139,7 @@ func TestEvalExpression(t *testing.T) {
 			}
 
 			// Evaluation
-			result := Interpret(expr)
+			result := Interpret(expr, false)
 
 			if tt.errorMsg != "" {
 				if !utils.HadRuntimeError {
@@ -178,7 +175,7 @@ func TestEvalLiteral(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			expr := &ast.Literal{Value: tt.literal}
-			result := Interpret([]ast.Stmt{expr})
+			result := Interpret([]ast.Stmt{expr}, false)
 			if result[0] != tt.expected {
 				t.Errorf("Expected %v, got %v", tt.expected, result)
 			}
@@ -221,7 +218,7 @@ func TestEvalUnary(t *testing.T) {
 				Right:    operandExpr,
 			}
 
-			result := Interpret([]ast.Stmt{expr})
+			result := Interpret([]ast.Stmt{expr}, false)
 			if tt.errorMsg != "" {
 				if !utils.HadRuntimeError {
 					t.Errorf("Expected runtime error '%s', but got result %v", tt.errorMsg, result)
@@ -284,7 +281,7 @@ func TestEvalBinary(t *testing.T) {
 				Right:    rightExpr,
 			}
 
-			result := Interpret([]ast.Stmt{expr})
+			result := Interpret([]ast.Stmt{expr}, false)
 			if tt.errorMsg != "" {
 				if !utils.HadRuntimeError {
 					t.Errorf("Expected runtime error '%s', but got result %v", tt.errorMsg, result)

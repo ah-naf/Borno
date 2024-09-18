@@ -331,7 +331,7 @@ func (p *Parser) primary() (ast.Expr, error) {
 			return nil, err
 		}
 
-		return &ast.Grouping{Expression: expr, Line: p.advance().Line}, nil
+		return &ast.Grouping{Expression: expr, Line: p.previous().Line}, nil
 	}
 
 	return nil, p.error(p.peek(), "Unexpected token. Expect expression.")

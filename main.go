@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ah-naf/crafting-interpreter/interpreter"
 	"github.com/ah-naf/crafting-interpreter/lexer"
 	"github.com/ah-naf/crafting-interpreter/parser"
 	"github.com/ah-naf/crafting-interpreter/utils"
@@ -65,13 +64,13 @@ func run(source string, isRepl bool) {
 		return
 	}
 
-	interpreter.Interpret(expr, isRepl)
+	// interpreter.Interpret(expr, isRepl)
 	if utils.HadRuntimeError {
 		return
 	}
 
-	// for _, token := range expr {
-	// 	fmt.Println(token)
-	// }
+	for _, token := range expr {
+		fmt.Println(token)
+	}
 	// fmt.Println(expr)
 }
