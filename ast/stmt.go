@@ -39,6 +39,12 @@ type BlockStmt struct {
 	Block []Stmt
 }
 
+type IfStmt struct {
+	Condition  Expr
+	ThenBranch Stmt
+	ElseBranch Stmt
+}
+
 // String method for PrintStatement
 func (p *PrintStatement) String() string {
 	return fmt.Sprintf("(print %s)", p.Expression.String()) // Return string representation of print statement
@@ -71,5 +77,16 @@ func (b *BlockStmt) String() string {
 		val += fmt.Sprintf("%s\n", statement.String())
 	}
 	val += fmt.Sprint("}")
+	return val
+}
+
+func (i *IfStmt) String() string {
+	val := fmt.Sprintf("if (%s)", i.Condition)
+	val += i.ThenBranch.String()
+	if i.ElseBranch != nil {
+		val += "else "
+		val += i.ElseBranch.String()
+		
+	}
 	return val
 }
