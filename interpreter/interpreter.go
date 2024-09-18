@@ -80,6 +80,13 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) interface{} 
 		}
 		return val
 
+	case *ast.BlockStmt:
+		newEnv := environment.NewEnvironmentWithParent(env)
+		for _, statement := range e.Block {
+			eval(statement, newEnv, isRepl)
+		}
+		return nil
+
 	default:
 		lineNumber := getLineNumber(expr)
 		utils.RuntimeError(token.Token{Line: lineNumber}, "Unknown expression type.")

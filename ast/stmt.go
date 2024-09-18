@@ -31,6 +31,10 @@ type AssignmentStmt struct {
 	Line  int
 }
 
+type BlockStmt struct {
+	Block []Stmt
+}
+
 // String method for PrintStatement
 func (p *PrintStatement) String() string {
 	return fmt.Sprintf("(print %s)", p.Expression.String()) // Return string representation of print statement
@@ -47,4 +51,13 @@ func (v *VarStmt) String() string {
 
 func (a *AssignmentStmt) String() string {
 	return fmt.Sprintf("(%s = %s)", a.Name.Lexeme, a.Value.String())
+}
+
+func (b *BlockStmt) String() string {
+	val := fmt.Sprintf("{\n")
+	for _, statement := range b.Block {
+		val += fmt.Sprintf("%s\n", statement.String())
+	}
+	val += fmt.Sprint("}")
+	return val
 }

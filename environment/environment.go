@@ -9,10 +9,15 @@ import (
 
 type Environment struct {
 	Values map[string]interface{}
+	Parent *Environment
 }
 
 func NewEnvironment() *Environment {
 	return &Environment{Values: make(map[string]interface{})}
+}
+
+func NewEnvironmentWithParent(parent *Environment) *Environment {
+	return &Environment{Values: make(map[string]interface{}), Parent: parent}
 }
 
 // Define a new variable in environment
@@ -26,6 +31,10 @@ func (e *Environment) Get(name string) (interface{}, error) {
 		return value, nil
 	}
 
+	if e.Parent != nil {
+		return e.Parent.Get(name)
+	}
+
 	return nil, fmt.Errorf("undefined variable '%s'", name)
 }
 
@@ -34,5 +43,11 @@ func (e *Environment) Assign(name token.Token, value interface{}) {
 		e.Values[name.Lexeme] = value
 		return
 	}
+
+	if e.Parent != nil {
+		e.Parent.Assign(name, value)
+		return
+	}
+
 	utils.RuntimeError(name, "Undefined variable '"+name.Lexeme+"'.")
 }

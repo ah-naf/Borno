@@ -71,6 +71,14 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return p.printStatement()
 	}
 
+	if p.match(token.LEFT_BRACE) {
+		blocks, err := p.block()
+		if err != nil {
+			return nil, err
+		}
+		return &ast.BlockStmt{Block: blocks}, nil
+	}
+
 	return p.expressionStatement()
 }
 
@@ -92,43 +100,58 @@ func (p *Parser) expressionStatement() (ast.Stmt, error) {
 	return &ast.ExpressionStatement{Expression: value}, nil
 }
 
+func (p *Parser) block() ([]ast.Stmt, error) {
+	statments := []ast.Stmt{}
+
+	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		decl, err := p.declaration()
+		if err != nil {
+			return nil, err
+		}
+		statments = append(statments, decl)
+	}
+
+	p.consume(token.RIGHT_BRACE, "Expect '}' after block.")
+	return statments, nil
+}
+
 func (p *Parser) expression() (ast.Expr, error) {
 	return p.assignment()
 }
 
 func (p *Parser) assignment() (ast.Expr, error) {
-    // Parse the expression on the left-hand side of the assignment
-    expr, err := p.bitwiseOR()
-    if err != nil {
-        return nil, err
-    }
+	// Parse the expression on the left-hand side of the assignment
+	expr, err := p.bitwiseOR()
+	if err != nil {
+		return nil, err
+	}
 
-    // Check if the current token is an assignment operator
-    if p.match(token.EQUAL) {
-        equalOperator := p.previous()
+	// Check if the current token is an assignment operator
+	if p.match(token.EQUAL) {
+		equalOperator := p.previous()
 
-        // Parse the expression on the right-hand side of the assignment
-        value, err := p.assignment()
-        if err != nil {
-            return nil, err
-        }
+		// Parse the expression on the right-hand side of the assignment
+		value, err := p.assignment()
+		if err != nil {
+			return nil, err
+		}
 
-        // Ensure that the left-hand side is a valid assignment target
-        if identifier, ok := expr.(*ast.Identifier); ok {
-            // Return the AssignmentStmt with the identifier as the target and the value as the expression
-            return &ast.AssignmentStmt{
-                Name:  identifier.Name, // Set the name of the variable
-                Value: value,
-                Line:  equalOperator.Line,
-            }, nil
-        }
+		// Ensure that the left-hand side is a valid assignment target
+		if identifier, ok := expr.(*ast.Identifier); ok {
+			// Return the AssignmentStmt with the identifier as the target and the value as the expression
+			return &ast.AssignmentStmt{
+				Name:  identifier.Name, // Set the name of the variable
+				Value: value,
+				Line:  equalOperator.Line,
+			}, nil
+		}
 
-        // If the left-hand side is not a valid assignment target, throw an error
-        p.error(equalOperator, "Invalid assignment target.")
-    }
+		// If the left-hand side is not a valid assignment target, throw an error
+		p.error(equalOperator, "Invalid assignment target.")
+	}
 
-    // If no assignment, return the original expression
-    return expr, nil
+	// If no assignment, return the original expression
+	return expr, nil
 }
 
 func (p *Parser) bitwiseOR() (ast.Expr, error) {
