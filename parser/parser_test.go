@@ -1,6 +1,9 @@
 package parser_test
 
 import (
+	"bytes"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/ah-naf/crafting-interpreter/ast"
@@ -21,6 +24,33 @@ func scanAndParse(input string) ([]ast.Stmt, error) {
 	return expr, err
 }
 
+func CaptureStderr(f func()) string {
+	// Create a pipe to capture os.Stderr
+	r, w, _ := os.Pipe()
+
+	// Save the current os.Stderr so we can restore it later
+	oldStderr := os.Stderr
+
+	// Redirect os.Stderr to the pipe's writer
+	os.Stderr = w
+
+	// Run the provided function that might write to os.Stderr
+	f()
+
+	// Close the writer to stop capturing
+	w.Close()
+
+	// Restore the original os.Stderr
+	os.Stderr = oldStderr
+
+	// Read the captured output from the pipe
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+
+	// Return the captured error output as a string
+	return buf.String()
+}
+
 // Test cases according to the grammar rules
 func TestParseGrammar(t *testing.T) {
 	tests := []struct {
@@ -31,120 +61,189 @@ func TestParseGrammar(t *testing.T) {
 	}{
 		{
 			name:      "Null",
-			input:     "nil",
+			input:     "nil;",
 			expected:  "nil",
 			expectErr: false,
 		},
 		{
 			name:      "Bitwise AND",
-			input:     "5 & 3",
+			input:     "5 & 3;",
 			expected:  "(5 & 3)",
 			expectErr: false,
 		},
 		{
 			name:      "Bitwise OR",
-			input:     "5 | 3",
+			input:     "5 | 3;",
 			expected:  "(5 | 3)",
 			expectErr: false,
 		},
 		{
 			name:      "Bitwise XOR",
-			input:     "5 ^ 3",
+			input:     "5 ^ 3;",
 			expected:  "(5 ^ 3)",
 			expectErr: false,
 		},
 		{
 			name:      "Bitwise NOT",
-			input:     "~5",
+			input:     "~5;",
 			expected:  "(~5)",
 			expectErr: false,
 		},
 		{
 			name:      "Left Shift",
-			input:     "5 << 2",
+			input:     "5 << 2;",
 			expected:  "(5 << 2)",
 			expectErr: false,
 		},
 		{
 			name:      "Right Shift",
-			input:     "20 >> 2",
+			input:     "20 >> 2;",
 			expected:  "(20 >> 2)",
 			expectErr: false,
 		},
 		{
 			name:      "Power",
-			input:     "2 ** 3",
+			input:     "2 ** 3;",
 			expected:  "(2 ** 3)",
 			expectErr: false,
 		},
 		{
 			name:      "Nested grouping",
-			input:     "(1 + (2 * 3))",
+			input:     "(1 + (2 * 3));",
 			expected:  "(group (1 + (group (2 * 3))))",
 			expectErr: false,
 		},
 		{
 			name:      "Deeply nested grouping",
-			input:     "((1 + 2) * (3 / (4 - 5)))",
+			input:     "((1 + 2) * (3 / (4 - 5)));",
 			expected:  "(group ((group (1 + 2)) * (group (3 / (group (4 - 5))))))",
 			expectErr: false,
 		},
 		{
 			name:      "Chained binary operations",
-			input:     "1 + 2 - 3 * 4 / 5",
+			input:     "1 + 2 - 3 * 4 / 5;",
 			expected:  "((1 + 2) - ((3 * 4) / 5))",
 			expectErr: false,
 		},
 		{
 			name:      "Complex with comparison",
-			input:     "(1 + 2) > (3 * 4) == true",
+			input:     "(1 + 2) > (3 * 4) == true;",
 			expected:  "(((group (1 + 2)) > (group (3 * 4))) == true)",
 			expectErr: false,
 		},
 		{
 			name:      "Unary and binary mixed",
-			input:     "-(1 + 2) * !(3 > 4)",
+			input:     "-(1 + 2) * !(3 > 4);",
 			expected:  "((-(group (1 + 2))) * (!(group (3 > 4))))",
 			expectErr: false,
 		},
 		{
 			name:      "Complex bitwise operations",
-			input:     "(5 & 3) | (4 ^ 2)",
+			input:     "(5 & 3) | (4 ^ 2);",
 			expected:  "((group (5 & 3)) | (group (4 ^ 2)))",
 			expectErr: false,
 		},
 		{
 			name:      "Shift and power",
-			input:     "(10 >> 1) ** 2",
+			input:     "(10 >> 1) ** 2;",
 			expected:  "((group (10 >> 1)) ** 2)",
 			expectErr: false,
 		},
 		{
 			name:      "Precedence test",
-			input:     "1 + 2 * 3 ** 2 & 4 | 5 ^ 6",
+			input:     "1 + 2 * 3 ** 2 & 4 | 5 ^ 6;",
 			expected:  "(((1 + (2 * (3 ** 2))) & 4) | (5 ^ 6))",
 			expectErr: false,
+		},
+		{
+			name:      "Variable Declaration",
+			input:     "var a = 10;",
+			expected:  "var a = 10",
+			expectErr: false,
+		},
+		{
+			name:      "Multiple Variable Declaration",
+			input:     "var a = 10, b = 20;",
+			expected:  "var a = 10\nvar b = 20\n",
+			expectErr: false,
+		},
+		{
+			name:      "Variable Assignment",
+			input:     "a = 10;",
+			expected:  "(a = 10)",
+			expectErr: false,
+		},
+		{
+			name:      "Invalid Variable Declaration",
+			input:     "var = 10;",
+			expected:  "",
+			expectErr: true,
+		},
+		{
+			name:      "Assignment Chaining",
+			input:     "var a = b = c = 2;",
+			expected:  "var a = (b = (c = 2))",
+			expectErr: false,
+		},
+		{
+			name:      "Simple If Statement",
+			input:     "if (true) { print 1; }",
+			expected:  "if (true){\n(print 1)\n}",
+			expectErr: false,
+		},
+		{
+			name:      "If-Else Statement",
+			input:     "if (false) { print 1; } else { print 2; }",
+			expected:  "if (false){\n(print 1)\n}else {\n(print 2)\n}",
+			expectErr: false,
+		},
+		{
+			name:  "Nested If-Else",
+			input: "if (a > b) { if (a > c) { print a; } else { print c; } }",
+			expected: `if ((a > b)){
+if ((a > c)){
+(print a)
+}else {
+(print c)
+}
+}`,
+			expectErr: false,
+		},
+		{
+			name:      "Invalid If Statement",
+			input:     "if true { print 1; }",
+			expected:  "",
+			expectErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			expr, err := scanAndParse(tt.input + ";")
+			output := ""
+			captured := CaptureStderr(func() {
+				expr, err := scanAndParse(tt.input)
 
-			if tt.expectErr {
-				if err == nil {
-					t.Errorf("Expected an error but got none for input: %s", tt.input)
+				if err != nil {
+					os.Stderr.Write([]byte(err.Error() + "\n"))
 				}
-				return
+
+				if len(expr) == 0 {
+					return
+				}
+				output = expr[0].String()
+			})
+
+			if tt.expectErr && captured == "" {
+				t.Fatalf("Expected an error but got none for input: %s", tt.input)
 			}
 
-			if !tt.expectErr && err != nil {
-				t.Errorf("Did not expect an error but got one for input: %s, error: %v", tt.input, err)
-				return
+			if !tt.expectErr && captured != "" {
+				t.Fatalf("Did not expect an error but got one for input: %s, error: %v", tt.input, captured)
 			}
 
-			if expr[0].String() != tt.expected {
-				t.Errorf("Expected %s, but got %s", tt.expected, expr[0].String())
+			if output != tt.expected {
+				t.Fatalf("Expected %s, but got %s", tt.expected, output)
 			}
+
 		})
 	}
 }
