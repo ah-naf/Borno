@@ -120,6 +120,14 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) interface{} 
 		}
 		return nil
 
+	case *ast.IfStmt:
+		if isTruthy(eval(e.Condition, env, isRepl)) {
+			eval(e.ThenBranch, env, isRepl)
+		} else if e.ElseBranch != nil {
+			eval(e.ElseBranch, env, isRepl)
+		}
+		return nil
+
 	default:
 		lineNumber := getLineNumber(expr)
 		utils.RuntimeError(token.Token{Line: lineNumber}, "Unknown expression type.")
@@ -348,7 +356,15 @@ func isTruthy(value interface{}) bool {
 	if b, ok := value.(bool); ok {
 		return b
 	}
-	return true
+	if num, ok := value.(float64); ok {
+		// 0.0 should be false, any non-zero number should be true
+		return num != 0.0
+	}
+	if str, ok := value.(string); ok {
+		// An empty string should be false, non-empty string should be true
+		return str != ""
+	}
+	return true // Everything else is considered true
 }
 
 func isEqual(a, b interface{}) bool {

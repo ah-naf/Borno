@@ -71,10 +71,10 @@ func run(source string, isRepl bool) {
 		return
 	}
 
-	for _, stmt := range expr {
-		// prettyPrint(stmt) // Use %#v to print all the nested fields and structs
-		fmt.Println(stmt)
-	}
+	// for _, stmt := range expr {
+	// 	// prettyPrint(stmt) // Use %#v to print all the nested fields and structs
+	// 	fmt.Println(stmt)
+	// }
 	// fmt.Println(expr)
 }
 

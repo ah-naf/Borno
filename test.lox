@@ -1,1 +1,5 @@
-print ~1;
+if(2 + 2 < 2 + 2) {
+    print "boro";
+} else {
+    print "choto";
+}
