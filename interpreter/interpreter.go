@@ -121,12 +121,27 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) interface{} 
 		return nil
 
 	case *ast.IfStmt:
-		if isTruthy(eval(e.Condition, env, isRepl)) {
+		cc := eval(e.Condition, env, isRepl)
+		if isTruthy(cc) {
 			eval(e.ThenBranch, env, isRepl)
 		} else if e.ElseBranch != nil {
 			eval(e.ElseBranch, env, isRepl)
 		}
 		return nil
+	
+	case *ast.Logical:
+		left := eval(e.Left, env, isRepl)
+		// fmt.Printf("%v %v %v\n", left, e.Operator.Type, token.OR)
+		if e.Operator.Type == token.LOGICAL_OR {
+			if isTruthy(left) {
+				return left
+			}
+		} else {
+			if !isTruthy(left) {
+				return left
+			}
+		}
+		return eval(e.Right, env, isRepl)
 
 	default:
 		lineNumber := getLineNumber(expr)
