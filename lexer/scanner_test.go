@@ -63,14 +63,14 @@ func TestScanTokens(t *testing.T) {
 		},
 		{
 			name:  "One and two character tokens",
-			input: "! != = == < <= > >= ** << >> || &&",
+			input: "! != = == < <= > >= ** << >> || && and or",
 			expected: []token.TokenType{
 				token.BANG, token.BANG_EQUAL,
 				token.EQUAL, token.EQUAL_EQUAL,
 				token.LESS, token.LESS_EQUAL,
 				token.GREATER, token.GREATER_EQUAL,
 				token.POWER,
-				token.LEFT_SHIFT, token.RIGHT_SHIFT, token.LOGICAL_OR, token.LOGICAL_AND,
+				token.LEFT_SHIFT, token.RIGHT_SHIFT, token.LOGICAL_OR, token.LOGICAL_AND, token.LOGICAL_AND, token.LOGICAL_OR,
 				token.EOF,
 			},
 		},

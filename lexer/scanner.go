@@ -8,7 +8,7 @@ import (
 )
 
 var keywords = map[string]token.TokenType{
-	"and":    token.AND,
+	"and":    token.LOGICAL_AND,
 	"class":  token.CLASS,
 	"else":   token.ELSE,
 	"false":  token.FALSE,
@@ -16,7 +16,7 @@ var keywords = map[string]token.TokenType{
 	"fun":    token.FUN,
 	"if":     token.IF,
 	"nil":    token.NIL,
-	"or":     token.OR,
+	"or":     token.LOGICAL_OR,
 	"print":  token.PRINT,
 	"return": token.RETURN,
 	"super":  token.SUPER,
