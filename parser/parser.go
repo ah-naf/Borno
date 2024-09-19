@@ -186,7 +186,7 @@ func (p *Parser) expression() (ast.Expr, error) {
 
 func (p *Parser) assignment() (ast.Expr, error) {
 	// Parse the expression on the left-hand side of the assignment
-	expr, err := p.bitwiseOR()
+	expr, err := p.logicalOR()
 	if err != nil {
 		return nil, err
 	}
@@ -216,6 +216,44 @@ func (p *Parser) assignment() (ast.Expr, error) {
 	}
 
 	// If no assignment, return the original expression
+	return expr, nil
+}
+
+func (p *Parser) logicalOR() (ast.Expr, error) {
+	expr, err := p.logicalAnd()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.LOGICAL_OR) {
+		operator := p.previous()
+		right, err := p.logicalAnd()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = &ast.Logical{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) logicalAnd() (ast.Expr, error) {
+	expr, err := p.bitwiseOR()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.LOGICAL_AND) {
+		operator := p.previous()
+		right, err := p.bitwiseOR()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = &ast.Logical{Left: expr, Operator: operator, Right: right}
+	}
+
 	return expr, nil
 }
 
@@ -267,7 +305,7 @@ func (p *Parser) bitwiseAND() (ast.Expr, error) {
 		return nil, err
 	}
 
-	for p.match(token.AND) {
+	for p.match(token.AND){
 		operator := p.previous()
 		right, err := p.equality()
 

@@ -65,3 +65,13 @@ type Identifier struct {
 func (i *Identifier) String() string {
 	return i.Name.Lexeme
 }
+
+type Logical struct {
+	Left     Expr
+	Operator token.Token
+	Right    Expr
+}
+
+func (l *Logical) String() string {
+	return fmt.Sprintf("(%s %s %s)", l.Left.String(), l.Operator.Lexeme, l.Right.String())
+}

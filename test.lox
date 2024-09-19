@@ -1,5 +1,1 @@
-if(2 + 2 < 2 + 2) {
-    print "boro";
-} else {
-    print "choto";
-}
+if(a > b && a >c ) {print c;} else {print a;}

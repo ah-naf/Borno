@@ -215,6 +215,70 @@ if ((a > c)){
 			expected:  "",
 			expectErr: true,
 		},
+		{
+			name:  "valid if statement with && condition",
+			input: "if(a > b && a >c ) {print c;} else {print a;}",
+			expected: `if (((a > b) && (a > c))){
+(print c)
+}else {
+(print a)
+}`,
+			expectErr: false,
+		},
+		{
+			name:      "Logical AND condition",
+			input:     "if (a > b && b > c) { print a; }",
+			expected:  "if (((a > b) && (b > c))){\n(print a)\n}",
+			expectErr: false,
+		},
+		{
+			name:      "Logical OR condition",
+			input:     "if (a > b || b > c) { print b; }",
+			expected:  "if (((a > b) || (b > c))){\n(print b)\n}",
+			expectErr: false,
+		},
+		{
+			name:      "Logical AND with Logical OR",
+			input:     "if (a > b && b > c || c > d) { print b; }",
+			expected:  "if ((((a > b) && (b > c)) || (c > d))){\n(print b)\n}",
+			expectErr: false,
+		},
+		{
+			name:      "Nested Logical AND/OR",
+			input:     "if ((a > b && b > c) || (c > d && d > e)) { print a; }",
+			expected:  "if (((group ((a > b) && (b > c))) || (group ((c > d) && (d > e))))){\n(print a)\n}",
+			expectErr: false,
+		},
+		{
+			name:      "Logical OR and comparison",
+			input:     "if (a < b || b == c) { print b; }",
+			expected:  "if (((a < b) || (b == c))){\n(print b)\n}",
+			expectErr: false,
+		},
+		{
+			name:      "Logical AND with comparison and arithmetic",
+			input:     "if (a + b > c && b - c < d) { print a; }",
+			expected:  "if ((((a + b) > c) && ((b - c) < d))){\n(print a)\n}",
+			expectErr: false,
+		},
+		{
+			name:      "Logical AND with nested parentheses",
+			input:     "if ((a && b) && (c || d)) { print true; }",
+			expected:  "if (((group (a && b)) && (group (c || d)))){\n(print true)\n}",
+			expectErr: false,
+		},
+		{
+			name:      "Invalid Logical AND without parentheses",
+			input:     "if a && b { print true; }",
+			expected:  "",
+			expectErr: true,
+		},
+		{
+			name:      "Invalid Logical OR without parentheses",
+			input:     "if a || b { print false; }",
+			expected:  "",
+			expectErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

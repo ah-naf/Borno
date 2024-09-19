@@ -19,7 +19,10 @@ printStmt      → "print" expression ";" ;
 
 
 expression     → assignment ;
-assignment     → IDENTIFIER "=" assignment | bitwise_or ;
+assignment     → IDENTIFIER "=" assignment | logic_or ;
+
+logic_or       → logic_and ( ( "or" | "||" ) logic_and )* ;
+logic_and      → bitwise_or ( ( "and" | "&&" ) bitwise_or )* ;
 bitwise_or     → bitwise_xor ( "|" bitwise_xor )* ;
 bitwise_xor    → bitwise_and ( "^" bitwise_and )* ;
 bitwise_and    → equality ( "&" equality )* ;
