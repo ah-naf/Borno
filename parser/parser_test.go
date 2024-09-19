@@ -279,6 +279,30 @@ if ((a > c)){
 			expected:  "",
 			expectErr: true,
 		},
+		{
+			name:      "Simple While Statement",
+			input:     "while (true) { print 1; }",
+			expected:  "while (true){\n(print 1)\n}",
+			expectErr: false,
+		},
+		{
+			name:      "While Statement with Condition",
+			input:     "while (x < 5) { x = x + 1; }",
+			expected:  "while ((x < 5)){\n(x = (x + 1))\n}",
+			expectErr: false,
+		},
+		{
+			name:  "While Statement with Complex Body",
+			input: "while (x > 0) { if (x == 1) { print x; } else { print -x; } }",
+			expected: `while ((x > 0)){
+if ((x == 1)){
+(print x)
+}else {
+(print (-x))
+}
+}`,
+			expectErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

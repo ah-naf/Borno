@@ -103,6 +103,9 @@ func (p *Parser) statement() (ast.Stmt, error) {
 	if p.match(token.IF) {
 		return p.IfStatement()
 	}
+	if p.match(token.WHILE) {
+		return p.while()
+	}
 	if p.match(token.PRINT) {
 		return p.printStatement()
 	}
@@ -116,6 +119,30 @@ func (p *Parser) statement() (ast.Stmt, error) {
 	}
 
 	return p.expressionStatement()
+}
+
+func (p *Parser) while() (ast.Stmt, error) {
+	_, err := p.consume(token.LEFT_PAREN, "Expect '(' after 'while'.")
+	if err != nil {
+		return nil, err
+	}
+
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(token.RIGHT_PAREN, "Expect ')' after condition.")
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.While{Condition: condition, Body: body}, nil
 }
 
 func (p *Parser) IfStatement() (ast.Stmt, error) {
@@ -305,7 +332,7 @@ func (p *Parser) bitwiseAND() (ast.Expr, error) {
 		return nil, err
 	}
 
-	for p.match(token.AND){
+	for p.match(token.AND) {
 		operator := p.previous()
 		right, err := p.equality()
 

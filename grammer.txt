@@ -7,9 +7,11 @@ variable       → IDENTIFIER ( "=" expression)? ;
 
 statement      → exprStmt
                | ifStmt
+               | whileStmt
                | printStmt
                | block ;
 
+whileStmt      → "while" "(" expression ")" statement ;
 ifStmt         → "if" "(" expression ")" statement
                ( "else" statement )? ;
 
