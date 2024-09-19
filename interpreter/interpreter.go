@@ -143,6 +143,12 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) interface{} 
 		}
 		return eval(e.Right, env, isRepl)
 
+	case *ast.While:
+		for isTruthy(eval(e.Condition, env, isRepl)) {
+			eval(e.Body, env, isRepl)
+		}
+		return nil
+
 	default:
 		lineNumber := getLineNumber(expr)
 		utils.RuntimeError(token.Token{Line: lineNumber}, "Unknown expression type.")
