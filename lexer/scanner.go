@@ -58,6 +58,7 @@ func (s *Scanner) ScanTokens() []token.Token {
 }
 
 // scanToken scans a single token
+// scanToken scans a single token
 func (s *Scanner) scanToken() {
 	c := s.advance()
 
@@ -81,9 +82,17 @@ func (s *Scanner) scanToken() {
 	case ';':
 		s.addToken(token.SEMICOLON)
 	case '|':
-		s.addToken(token.OR)
+		if s.match('|') {
+			s.addToken(token.LOGICAL_OR) // Recognize '||' as logical OR
+		} else {
+			s.addToken(token.OR)
+		}
 	case '&':
-		s.addToken(token.AND)
+		if s.match('&') {
+			s.addToken(token.LOGICAL_AND) // Recognize '&&' as logical AND
+		} else {
+			s.addToken(token.AND)
+		}
 	case '^':
 		s.addToken(token.XOR)
 	case '~':
@@ -133,6 +142,7 @@ func (s *Scanner) scanToken() {
 			s.addToken(token.SLASH)
 		}
 	case ' ', '\r', '\t':
+		// Ignore whitespace
 	case '\n':
 		s.line++
 	case '"':
