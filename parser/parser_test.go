@@ -352,6 +352,28 @@ while ((i < 3)){
 }`,
 			expectErr: false,
 		},
+		{
+			name: "For loop with break",
+			input: `for(var a = 0; a < 5; a = a + 1) {
+				print a;
+				if(a == 2) {
+					break;
+				}
+			}`,
+			expected: `{
+var a = 0
+while ((a < 5)){
+{
+(print a)
+if ((a == 2)){
+break
+}
+}
+(a = (a + 1))
+}
+}`,
+			expectErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

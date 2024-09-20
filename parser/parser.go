@@ -112,6 +112,20 @@ func (p *Parser) statement() (ast.Stmt, error) {
 	if p.match(token.PRINT) {
 		return p.printStatement()
 	}
+	if p.match(token.BREAK) {
+		_, err := p.consume(token.SEMICOLON, "Expected ; after break.")
+		if err != nil {
+			return nil, err
+		}
+		return &ast.BreakStmt{}, nil
+	}
+	if p.match(token.CONTINUE) {
+		_, err := p.consume(token.SEMICOLON, "Expected ; after continue.")
+		if err != nil {
+			return nil, err
+		}
+		return &ast.ContinueStmt{}, nil
+	}
 
 	if p.match(token.LEFT_BRACE) {
 		blocks, err := p.block()

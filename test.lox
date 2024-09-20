@@ -1,1 +1,6 @@
-for(; a < 5;) { print a; }
+for(var a = 0; a < 5; a = a + 1) {
+    print a;
+    if(a == 2) {
+        break;
+    }
+}

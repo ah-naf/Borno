@@ -101,3 +101,15 @@ func (w *While) String() string {
 	val += w.Body.String()
 	return val
 }
+
+type BreakStmt struct{}
+
+func (b *BreakStmt) String() string {
+	return "break"
+}
+
+type ContinueStmt struct{}
+
+func (b *ContinueStmt) String() string {
+	return "continue"
+}

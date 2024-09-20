@@ -43,6 +43,8 @@ const (
 	NUMBER
 
 	// Keywords
+	BREAK
+	CONTINUE
 	LOGICAL_AND
 	CLASS
 	ELSE
