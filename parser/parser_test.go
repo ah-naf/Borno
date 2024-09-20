@@ -303,6 +303,55 @@ if ((x == 1)){
 }`,
 			expectErr: false,
 		},
+		{
+			name:  "For Loop with initializer, condition, and increment",
+			input: "for(var a = 0; a < 5; a = a + 1) { print a; }",
+			expected: `{
+var a = 0
+while ((a < 5)){
+{
+(print a)
+}
+(a = (a + 1))
+}
+}`,
+			expectErr: false,
+		},
+		{
+			name:  "For Loop with condition only",
+			input: "for(; a < 5;) { print a; }",
+			expected: `while ((a < 5)){
+(print a)
+}`,
+			expectErr: false,
+		},
+		{
+			name:  "For Loop with no condition (infinite loop)",
+			input: "for(;;) { print a; }",
+			expected: `while (true){
+(print a)
+}`,
+			expectErr: false,
+		},
+		{
+			name:  "For Loop without initializer and increment",
+			input: "for(; a < 10;) { print a; }",
+			expected: `while ((a < 10)){
+(print a)
+}`,
+			expectErr: false,
+		},
+		{
+			name:  "For Loop with initializer but no increment",
+			input: "for(var i = 0; i < 3;) { print i; }",
+			expected: `{
+var i = 0
+while ((i < 3)){
+(print i)
+}
+}`,
+			expectErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
