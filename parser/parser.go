@@ -187,34 +187,11 @@ func (p *Parser) forStatement() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	if increment != nil {
-		body = &ast.BlockStmt{
-			Block: []ast.Stmt{
-				body,
-				increment,
-			},
-		}
-	}
-
 	if condition == nil {
 		condition = &ast.Literal{Value: true}
 	}
 
-	body = &ast.While{
-		Condition: condition,
-		Body:      body,
-	}
-
-	if initializer != nil {
-		body = &ast.BlockStmt{
-			Block: []ast.Stmt{
-				initializer,
-				body,
-			},
-		}
-	}
-
-	return body, nil
+	return &ast.ForStmt{Initializer: initializer, Condition: condition, Body: body, Increment: increment}, nil
 }
 
 func (p *Parser) while() (ast.Stmt, error) {

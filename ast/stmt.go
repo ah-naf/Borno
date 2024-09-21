@@ -102,6 +102,37 @@ func (w *While) String() string {
 	return val
 }
 
+type ForStmt struct {
+	Condition   Expr
+	Increment   Expr
+	Initializer Stmt
+	Body        Stmt
+}
+
+func (f *ForStmt) String() string {
+	initializerStr := ""
+	if f.Initializer != nil {
+		initializerStr = f.Initializer.String()
+	}
+
+	conditionStr := ""
+	if f.Condition != nil {
+		conditionStr = f.Condition.String()
+	}
+
+	incrementStr := ""
+	if f.Increment != nil {
+		incrementStr = f.Increment.String()
+	}
+
+	bodyStr := ""
+	if f.Body != nil {
+		bodyStr = f.Body.String()
+	}
+
+	return fmt.Sprintf("for (%v; %v; %v) %v", initializerStr, conditionStr, incrementStr, bodyStr)
+}
+
 type BreakStmt struct{}
 
 func (b *BreakStmt) String() string {

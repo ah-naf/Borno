@@ -304,75 +304,67 @@ if ((x == 1)){
 			expectErr: false,
 		},
 		{
-			name:  "For Loop with initializer, condition, and increment",
-			input: "for(var a = 0; a < 5; a = a + 1) { print a; }",
-			expected: `{
-var a = 0
-while ((a < 5)){
-{
-(print a)
-}
-(a = (a + 1))
-}
-}`,
-			expectErr: false,
-		},
-		{
-			name:  "For Loop with condition only",
-			input: "for(; a < 5;) { print a; }",
-			expected: `while ((a < 5)){
-(print a)
-}`,
-			expectErr: false,
-		},
-		{
-			name:  "For Loop with no condition (infinite loop)",
-			input: "for(;;) { print a; }",
-			expected: `while (true){
-(print a)
-}`,
-			expectErr: false,
-		},
-		{
-			name:  "For Loop without initializer and increment",
-			input: "for(; a < 10;) { print a; }",
-			expected: `while ((a < 10)){
-(print a)
-}`,
-			expectErr: false,
-		},
-		{
-			name:  "For Loop with initializer but no increment",
-			input: "for(var i = 0; i < 3;) { print i; }",
-			expected: `{
-var i = 0
-while ((i < 3)){
-(print i)
-}
-}`,
-			expectErr: false,
-		},
-		{
-			name: "For loop with break",
+			name: "For loop",
 			input: `for(var a = 0; a < 5; a = a + 1) {
-				print a;
 				if(a == 2) {
-					break;
+					continue;
 				}
+				print a;
 			}`,
-			expected: `{
-var a = 0
-while ((a < 5)){
-{
-(print a)
+			expected: `for (var a = 0; (a < 5); (a = (a + 1))) {
 if ((a == 2)){
-break
+continue
 }
-}
-(a = (a + 1))
-}
+(print a)
 }`,
 			expectErr: false,
+		},
+		{
+			name: "Simple For Loop",
+			input: `for (var i = 0; i < 10; i = i + 1) { print i; }`,
+			expected: `for (var i = 0; (i < 10); (i = (i + 1))) {
+(print i)
+}`,
+			expectErr: false,
+		},
+		{
+			name: "For Loop Without Initializer",
+			input: `for (; i < 10; i = i + 1) { print i; }`,
+			expected: `for (; (i < 10); (i = (i + 1))) {
+(print i)
+}`,
+			expectErr: false,
+		},
+		{
+			name: "For Loop Without Condition",
+			input: `for (var i = 0;; i = i + 1) { print i; }`,
+			expected: `for (var i = 0; true; (i = (i + 1))) {
+(print i)
+}`,
+			expectErr: false,
+		},
+		{
+			name: "For Loop Without Increment",
+			input: `for (var i = 0; i < 10;) { print i; i = i + 1; }`,
+			expected: `for (var i = 0; (i < 10); ) {
+(print i)
+(i = (i + 1))
+}`,
+			expectErr: false,
+		},
+		{
+			name: "For Loop Without All Clauses",
+			input: `for (;;) { print "infinite"; }`,
+			expected: `for (; true; ) {
+(print infinite)
+}`,
+			expectErr: false,
+		},
+		{
+			name: "Invalid For Loop",
+			input: `for var i = 0; i < 10; i = i + 1 { print i; }`,
+			expected: "",
+			expectErr: true,
 		},
 	}
 	for _, tt := range tests {
