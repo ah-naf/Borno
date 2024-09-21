@@ -133,6 +133,8 @@ func (s *Scanner) scanToken() {
 		} else {
 			s.addToken(token.GREATER)
 		}
+	case '%':
+		s.addToken(token.MODULO)
 	case '/':
 		if s.match('/') {
 			for s.peek() != '\n' && !s.isAtEnd() {

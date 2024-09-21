@@ -24,6 +24,7 @@ const (
 	XOR
 	POWER
 	NOT
+	MODULO
 
 	// One or two character tokens
 	BANG
