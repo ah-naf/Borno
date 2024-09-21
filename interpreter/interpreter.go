@@ -10,13 +10,31 @@ import (
 	"github.com/ah-naf/crafting-interpreter/utils"
 )
 
+type ControlFlowSignal struct {
+	Type       int
+	LineNumber int
+}
+
+const (
+	ControlFlowNone int = iota
+	ControlFlowBreak
+	ControlFlowContinue
+)
+
 func Interpret(statements []ast.Stmt, isRepl bool) []interface{} {
 	var results []interface{}
 	env := environment.NewEnvironment()
 
 	for _, statement := range statements {
 		// fmt.Printf("%#v\n", statement)
-		result := eval(statement, env, isRepl)
+		result, signal := eval(statement, env, isRepl)
+		if signal.Type == ControlFlowBreak {
+			utils.RuntimeError(token.Token{Line: signal.LineNumber}, "Unexpected 'break' outside of loop.")
+			return nil
+		} else if signal.Type == ControlFlowContinue {
+			utils.RuntimeError(token.Token{Line: signal.LineNumber}, "Unexpected 'continue' outside of loop.")
+			return nil
+		}
 		// fmt.Printf("%#v\n", result)
 		if utils.HadRuntimeError {
 			return nil // Stop execution if a runtime error occurred during evaluation
@@ -27,132 +45,232 @@ func Interpret(statements []ast.Stmt, isRepl bool) []interface{} {
 	return results
 }
 
-func eval(expr ast.Expr, env *environment.Environment, isRepl bool) interface{} {
+func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}, *ControlFlowSignal) {
 	switch e := expr.(type) {
 	case *ast.PrintStatement:
-		value := eval(e.Expression, env, isRepl)
+		value, signal := eval(e.Expression, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return value, signal
+		}
 		if utils.HadRuntimeError {
-			return nil // Stop execution if a runtime error occurred during evaluation
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0} // Stop execution if a runtime error occurred during evaluation
 		}
 		fmt.Println(stringify(value))
-		return nil
+		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.ExpressionStatement:
-		value := eval(e.Expression, env, isRepl)
+		value, signal := eval(e.Expression, env, isRepl)
+
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
 		if isRepl && !utils.HadRuntimeError {
 			fmt.Println(stringify(value))
 		}
-		return value
+		return value, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.Literal:
-		return e.Value
+		return e.Value, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.Grouping:
 		return eval(e.Expression, env, isRepl)
 
 	case *ast.Unary:
-		right := eval(e.Right, env, isRepl)
-		if utils.HadRuntimeError {
-			return nil
+		right, signal := eval(e.Right, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
 		}
-		return evaluateUnary(e.Operator, right)
+		if utils.HadRuntimeError {
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+		return evaluateUnary(e.Operator, right), &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.Binary:
-		left := eval(e.Left, env, isRepl)
-		if utils.HadRuntimeError {
-			return nil
+		left, signal := eval(e.Left, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
 		}
-		right := eval(e.Right, env, isRepl)
 		if utils.HadRuntimeError {
-			return nil
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
-		return evaluateBinary(left, e.Operator, right)
+		right, signal := eval(e.Right, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
+		if utils.HadRuntimeError {
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+		return evaluateBinary(left, e.Operator, right), &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.VarStmt:
 		var value interface{}
 		if e.Initializer != nil {
-			value = eval(e.Initializer, env, isRepl)
-			if utils.HadRuntimeError {
-				return nil
+			v, signal := eval(e.Initializer, env, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal
 			}
+			if utils.HadRuntimeError {
+				return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+			}
+			value = v
 		}
 		_, err := env.Get(e.Name.Lexeme)
 		if err != nil {
 			env.Define(e.Name.Lexeme, value)
 		} else {
 			utils.RuntimeError(token.Token{Line: e.Line}, "Cannot redeclare variable "+e.Name.Lexeme+".")
-			return nil
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
-		return nil
+		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.VarListStmt:
 		for _, decl := range e.Declarations {
-			eval(&decl, env, isRepl)
+			_, signal := eval(&decl, env, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal
+			}
 			if utils.HadRuntimeError {
-				return nil
+				return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 			}
 		}
-		return nil
+		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.AssignmentStmt:
-		val := eval(e.Value, env, isRepl)
+		val, signal := eval(e.Value, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
 		if utils.HadRuntimeError {
-			return nil
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
 		env.Assign(e.Name, val)
-		return val
+		return val, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.Identifier:
 		val, err := env.Get(e.Name.Lexeme)
 		if err != nil {
 			utils.RuntimeError(token.Token{Line: e.Line}, "Variable "+e.Name.Lexeme+" is not defined.")
-			return nil
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
-		return val
+		return val, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.BlockStmt:
 		newEnv := environment.NewEnvironmentWithParent(env)
 		for _, statement := range e.Block {
-			eval(statement, newEnv, isRepl)
+			_, signal := eval(statement, newEnv, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal
+			}
 			if utils.HadRuntimeError {
-				return nil
+				return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 			}
 		}
-		return nil
+		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.IfStmt:
-		cc := eval(e.Condition, env, isRepl)
-		if isTruthy(cc) {
-			eval(e.ThenBranch, env, isRepl)
-		} else if e.ElseBranch != nil {
-			eval(e.ElseBranch, env, isRepl)
+		cc, signal := eval(e.Condition, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
 		}
-		return nil
-	
+		if isTruthy(cc) {
+			_, signal := eval(e.ThenBranch, env, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal
+			}
+		} else if e.ElseBranch != nil {
+			_, signal := eval(e.ElseBranch, env, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal
+			}
+		}
+		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
 	case *ast.Logical:
-		left := eval(e.Left, env, isRepl)
+		left, signal := eval(e.Left, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
 		// fmt.Printf("%v %v %v\n", left, e.Operator.Type, token.OR)
 		if e.Operator.Type == token.LOGICAL_OR {
 			if isTruthy(left) {
-				return left
+				return left, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 			}
 		} else {
 			if !isTruthy(left) {
-				return left
+				return left, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 			}
 		}
 		return eval(e.Right, env, isRepl)
 
 	case *ast.While:
-		for isTruthy(eval(e.Condition, env, isRepl)) {
-			eval(e.Body, env, isRepl)
+		for {
+			condVal, signal := eval(e.Condition, env, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal // Propagate signal upwards
+			}
+			if !isTruthy(condVal) {
+				break
+			}
+
+			_, signal = eval(e.Body, env, isRepl)
+			if signal.Type == ControlFlowBreak {
+				break // Exit the loop
+			}
 		}
-		return nil
+		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
+	case *ast.ForStmt:
+		// Execute the initializer
+		if e.Initializer != nil {
+			_, signal := eval(e.Initializer, env, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal
+			}
+		}
+
+		for {
+			// Check the condition
+			if e.Condition != nil {
+				condVal, signal := eval(e.Condition, env, isRepl)
+				if signal.Type != ControlFlowNone {
+					return nil, signal
+				}
+				if !isTruthy(condVal) {
+					break
+				}
+			}
+
+			// Execute the body
+			_, signal := eval(e.Body, env, isRepl)
+			if signal.Type == ControlFlowBreak {
+				break
+			}
+			if signal.Type == ControlFlowContinue {
+				// Skip to the increment
+			} else if signal.Type != ControlFlowNone {
+				return nil, signal
+			}
+
+			// Execute the increment
+			if e.Increment != nil {
+				_, signal := eval(e.Increment, env, isRepl)
+				if signal.Type != ControlFlowNone {
+					return nil, signal
+				}
+			}
+		}
+		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
+	case *ast.BreakStmt:
+		return nil, &ControlFlowSignal{Type: ControlFlowBreak, LineNumber: e.Line}
+
+	case *ast.ContinueStmt:
+		return nil, &ControlFlowSignal{Type: ControlFlowContinue, LineNumber: e.Line}
 
 	default:
 		lineNumber := getLineNumber(expr)
 		utils.RuntimeError(token.Token{Line: lineNumber}, "Unknown expression type.")
-		return nil
+		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 	}
 }
 
@@ -406,6 +524,11 @@ func getLineNumber(expr ast.Expr) int {
 		return e.Name.Line
 	case *ast.Identifier:
 		return e.Line
+	case *ast.BreakStmt:
+		return e.Line
+	case *ast.ContinueStmt:
+		return e.Line
+
 	// Add cases for other expression types if necessary
 	default:
 		return 0 // Return 0 if line number is not available

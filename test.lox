@@ -1,6 +1,10 @@
-for(var a = 0; a < 5; a = a + 1) {
-    print a;
-    if(a == 2) {
-        break;
+var a = 10;
+if (a > 5) {
+    if (a < 15) {
+        print "a is between 5 and 15";
+    } else {
+        print "a is greater than or equal to 15";
     }
+} else {
+    print "a is less than or equal to 5";
 }

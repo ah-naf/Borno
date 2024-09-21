@@ -117,14 +117,14 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &ast.BreakStmt{}, nil
+		return &ast.BreakStmt{Line: p.previous().Line}, nil
 	}
 	if p.match(token.CONTINUE) {
 		_, err := p.consume(token.SEMICOLON, "Expected ; after continue.")
 		if err != nil {
 			return nil, err
 		}
-		return &ast.ContinueStmt{}, nil
+		return &ast.ContinueStmt{Line: p.previous().Line}, nil
 	}
 
 	if p.match(token.LEFT_BRACE) {

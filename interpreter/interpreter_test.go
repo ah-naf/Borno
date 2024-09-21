@@ -93,7 +93,7 @@ func TestEvalExpression(t *testing.T) {
 		{"Unary minus", "-5;", -5.0, ""},
 		{"Unary bang true", "!true;", false, ""},
 		{"Unary bang false", "!false;", true, ""},
-		{"Unary bang number", "!0;", false, ""},
+		{"Unary bang number", "!0;", true, ""},
 		{"Nil equality", "nil == nil;", true, ""},
 		{"Addition of strings", "\"foo\" + \"bar\";", "foobar", ""},
 

@@ -133,13 +133,17 @@ func (f *ForStmt) String() string {
 	return fmt.Sprintf("for (%v; %v; %v) %v", initializerStr, conditionStr, incrementStr, bodyStr)
 }
 
-type BreakStmt struct{}
+type BreakStmt struct {
+	Line int
+}
 
 func (b *BreakStmt) String() string {
 	return "break"
 }
 
-type ContinueStmt struct{}
+type ContinueStmt struct {
+	Line int
+}
 
 func (b *ContinueStmt) String() string {
 	return "continue"
