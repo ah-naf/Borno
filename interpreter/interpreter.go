@@ -292,8 +292,38 @@ func evaluateBinary(left interface{}, operator token.Token, right interface{}) i
 	case token.GREATER, token.GREATER_EQUAL, token.LESS, token.LESS_EQUAL:
 		return handleComparison(left, right, operator)
 
-	case token.AND, token.OR, token.XOR, token.LEFT_SHIFT, token.RIGHT_SHIFT, token.POWER:
+	case token.AND, token.OR, token.XOR, token.LEFT_SHIFT, token.RIGHT_SHIFT:
 		return handleBitwise(left, right, operator)
+
+	case token.POWER:
+		leftFloat, err := toNumber(left)
+		if err != nil {
+			utils.RuntimeError(operator, "Left operand must be a number.")
+			return nil
+		}
+		rightFloat, err := toNumber(right)
+		if err != nil {
+			utils.RuntimeError(operator, "Right operand must be a number.")
+			return nil
+		}
+		return math.Pow(leftFloat, rightFloat)
+
+	case token.MODULO:
+		leftNum, err := toNumber(left)
+		if err != nil {
+			utils.RuntimeError(operator, "Left operand must be a number.")
+			return nil
+		}
+		rightNum, err := toNumber(right)
+		if err != nil {
+			utils.RuntimeError(operator, "Right operand must be a number.")
+			return nil
+		}
+		if rightNum == 0 {
+			utils.RuntimeError(operator, "Division by zero.")
+			return nil
+		}
+		return math.Mod(leftNum, rightNum)
 
 	default:
 		utils.RuntimeError(operator, "Unknown binary operator: "+operator.Lexeme)

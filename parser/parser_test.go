@@ -102,6 +102,12 @@ func TestParseGrammar(t *testing.T) {
 			expectErr: false,
 		},
 		{
+			name:      "Modulo",
+			input:     "20 % 2;",
+			expected:  "(20 % 2)",
+			expectErr: false,
+		},
+		{
 			name:      "Power",
 			input:     "2 ** 3;",
 			expected:  "(2 ** 3)",

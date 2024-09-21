@@ -3,6 +3,7 @@ package interpreter
 import (
 	"bytes"
 	"io"
+	"math"
 	"os"
 	"reflect"
 	"strings"
@@ -79,6 +80,8 @@ func TestEvalExpression(t *testing.T) {
 		{"Nested Grouping and Power", "((3 ** 2) + (8 >> 2)) * 2;", float64(11 * 2), ""},
 
 		// // // Valid expressions
+		{"Square root", "2 ** 0.5;", math.Pow(2, 0.5), ""},
+		{"Modulo operator", "5 % 3;", 2.0, ""},
 		{"Addition of numbers", "1 + 2;", 3.0, ""},
 		{"Subtraction of numbers", "5 - 2;", 3.0, ""},
 		{"Multiplication of numbers", "3 * 4;", 12.0, ""},
