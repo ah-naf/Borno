@@ -2,6 +2,7 @@ program        → declaration* EOF ;
 
 declaration    → varDecl
                | statement ;
+
 varDecl        → "var" variable ( "," variable )* ";" ;
 variable       → IDENTIFIER ( "=" expression)? ;
 
@@ -10,7 +11,12 @@ statement      → exprStmt
                | whileStmt
                | forStmt
                | printStmt
-               | block ;
+               | block
+               | breakStmt
+               | continueStmt ;
+
+breakStmt      → "break" ";" ;
+continueStmt   → "continue" ";" ;
 
 forStmt        → "for" "(" ( varDecl | exprStmt | ";" )
                  expression? ";"
