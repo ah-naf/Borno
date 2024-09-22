@@ -171,8 +171,9 @@ func TestEvalExpression(t *testing.T) {
 					t.Fatalf("Parser error for input '%s'", tt.input)
 				}
 
+				interpreter := NewInterpreter()
 				// Evaluation
-				results := Interpret(expr, false)
+				results := interpreter.Interpret(expr, false)
 				// fmt.Println(results)
 				if len(results) > 0 {
 					output = results[0]
@@ -239,7 +240,8 @@ func TestEvalUnary(t *testing.T) {
 					Right:    operandExpr,
 				}
 
-				results := Interpret([]ast.Stmt{expr}, false)
+				interpreter := NewInterpreter()
+				results := interpreter.Interpret([]ast.Stmt{expr}, false)
 				if len(results) > 0 {
 					output = results[0]
 				}
@@ -316,7 +318,8 @@ func TestEvalBinary(t *testing.T) {
 					Right:    right,
 				}
 
-				results := Interpret([]ast.Stmt{expr}, false)
+				interpreter := NewInterpreter()
+				results := interpreter.Interpret([]ast.Stmt{expr}, false)
 				if len(results) > 0 {
 					output = results[0]
 				}

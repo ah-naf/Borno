@@ -1,10 +1,5 @@
-var a = 10;
-if (a > 5) {
-    if (a < 15) {
-        print "a is between 5 and 15";
-    } else {
-        print "a is greater than or equal to 15";
-    }
-} else {
-    print "a is less than or equal to 5";
+fun sayHi(first, last) {
+  print "Hi, " + first + " " + last + "!";
 }
+
+sayHi("Dear", "Reader");

@@ -10,9 +10,31 @@ import (
 	"github.com/ah-naf/crafting-interpreter/utils"
 )
 
+// Interpreter struct represents the execution context for evaluating expressions and statements.
+type Interpreter struct {
+	env     *environment.Environment
+	globals *environment.Environment
+}
+
 type ControlFlowSignal struct {
 	Type       int
 	LineNumber int
+}
+
+// NewInterpreter creates a new instance of the Interpreter with the given environment.
+func NewInterpreter() *Interpreter {
+	// Define the global environment and set up the clock function first
+	globals := environment.NewEnvironment()
+
+	globals.Define("clock", NativeClockFn{})
+
+	// Then, create the Interpreter instance with the global environment
+	i := &Interpreter{
+		env:     globals, // The interpreter starts with the global environment
+		globals: globals, // Store the reference to the global environment
+	}
+
+	return i
 }
 
 const (
@@ -21,13 +43,13 @@ const (
 	ControlFlowContinue
 )
 
-func Interpret(statements []ast.Stmt, isRepl bool) []interface{} {
+func (i *Interpreter) Interpret(statements []ast.Stmt, isRepl bool) []interface{} {
 	var results []interface{}
 	env := environment.NewEnvironment()
 
 	for _, statement := range statements {
 		// fmt.Printf("%#v\n", statement)
-		result, signal := eval(statement, env, isRepl)
+		result, signal := i.eval(statement, env, isRepl)
 		if signal.Type == ControlFlowBreak {
 			utils.RuntimeError(token.Token{Line: signal.LineNumber}, "Unexpected 'break' outside of loop.")
 			return nil
@@ -45,10 +67,57 @@ func Interpret(statements []ast.Stmt, isRepl bool) []interface{} {
 	return results
 }
 
-func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}, *ControlFlowSignal) {
+func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}, *ControlFlowSignal) {
 	switch e := expr.(type) {
+	case *ast.FunctionStmt:
+		function := NewFunction(e)
+		// fmt.Printf("%#v %#v\n",e.Name.Lexeme, function)
+		env.Define(e.Name.Lexeme, function)
+		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
+	case *ast.Call:
+		// Step 1: Evaluate the callee (the thing being called)
+		
+		callee, signal := i.eval(e.Callee, env, isRepl)
+
+		
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
+
+		// Ensure the callee is a callable function
+		function, ok := callee.(Callable)
+		if len(e.Arguments) != function.Arity() {
+			utils.RuntimeError(e.Paren, fmt.Sprintf("Expected %d arguments but %d.", function.Arity(), len(e.Arguments)))
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		if !ok {
+			utils.RuntimeError(e.Paren, "Can only call functions or classes.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		// Step 2: Evaluate each argument and collect them in a list
+		var arguments []interface{}
+		for _, arg := range e.Arguments {
+			argValue, signal := i.eval(arg, env, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal
+			}
+			arguments = append(arguments, argValue)
+		}
+
+		// Step 3: Call the function and return its result
+		result, err := function.Call(i, arguments)
+		if err != nil {
+			utils.RuntimeError(e.Paren, "Function call failed: "+err.Error())
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		return result, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
 	case *ast.PrintStatement:
-		value, signal := eval(e.Expression, env, isRepl)
+		value, signal := i.eval(e.Expression, env, isRepl)
 		if signal.Type != ControlFlowNone {
 			return value, signal
 		}
@@ -59,7 +128,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.ExpressionStatement:
-		value, signal := eval(e.Expression, env, isRepl)
+		value, signal := i.eval(e.Expression, env, isRepl)
 
 		if signal.Type != ControlFlowNone {
 			return nil, signal
@@ -73,10 +142,10 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 		return e.Value, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.Grouping:
-		return eval(e.Expression, env, isRepl)
+		return i.eval(e.Expression, env, isRepl)
 
 	case *ast.Unary:
-		right, signal := eval(e.Right, env, isRepl)
+		right, signal := i.eval(e.Right, env, isRepl)
 		if signal.Type != ControlFlowNone {
 			return nil, signal
 		}
@@ -86,14 +155,14 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 		return evaluateUnary(e.Operator, right), &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.Binary:
-		left, signal := eval(e.Left, env, isRepl)
+		left, signal := i.eval(e.Left, env, isRepl)
 		if signal.Type != ControlFlowNone {
 			return nil, signal
 		}
 		if utils.HadRuntimeError {
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
-		right, signal := eval(e.Right, env, isRepl)
+		right, signal := i.eval(e.Right, env, isRepl)
 		if signal.Type != ControlFlowNone {
 			return nil, signal
 		}
@@ -105,7 +174,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 	case *ast.VarStmt:
 		var value interface{}
 		if e.Initializer != nil {
-			v, signal := eval(e.Initializer, env, isRepl)
+			v, signal := i.eval(e.Initializer, env, isRepl)
 			if signal.Type != ControlFlowNone {
 				return nil, signal
 			}
@@ -125,7 +194,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 
 	case *ast.VarListStmt:
 		for _, decl := range e.Declarations {
-			_, signal := eval(&decl, env, isRepl)
+			_, signal := i.eval(&decl, env, isRepl)
 			if signal.Type != ControlFlowNone {
 				return nil, signal
 			}
@@ -136,7 +205,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.AssignmentStmt:
-		val, signal := eval(e.Value, env, isRepl)
+		val, signal := i.eval(e.Value, env, isRepl)
 		if signal.Type != ControlFlowNone {
 			return nil, signal
 		}
@@ -157,7 +226,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 	case *ast.BlockStmt:
 		newEnv := environment.NewEnvironmentWithParent(env)
 		for _, statement := range e.Block {
-			_, signal := eval(statement, newEnv, isRepl)
+			_, signal := i.eval(statement, newEnv, isRepl)
 			if signal.Type != ControlFlowNone {
 				return nil, signal
 			}
@@ -168,17 +237,17 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.IfStmt:
-		cc, signal := eval(e.Condition, env, isRepl)
+		cc, signal := i.eval(e.Condition, env, isRepl)
 		if signal.Type != ControlFlowNone {
 			return nil, signal
 		}
 		if isTruthy(cc) {
-			_, signal := eval(e.ThenBranch, env, isRepl)
+			_, signal := i.eval(e.ThenBranch, env, isRepl)
 			if signal.Type != ControlFlowNone {
 				return nil, signal
 			}
 		} else if e.ElseBranch != nil {
-			_, signal := eval(e.ElseBranch, env, isRepl)
+			_, signal := i.eval(e.ElseBranch, env, isRepl)
 			if signal.Type != ControlFlowNone {
 				return nil, signal
 			}
@@ -186,7 +255,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.Logical:
-		left, signal := eval(e.Left, env, isRepl)
+		left, signal := i.eval(e.Left, env, isRepl)
 		if signal.Type != ControlFlowNone {
 			return nil, signal
 		}
@@ -200,11 +269,11 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 				return left, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 			}
 		}
-		return eval(e.Right, env, isRepl)
+		return i.eval(e.Right, env, isRepl)
 
 	case *ast.While:
 		for {
-			condVal, signal := eval(e.Condition, env, isRepl)
+			condVal, signal := i.eval(e.Condition, env, isRepl)
 			if signal.Type != ControlFlowNone {
 				return nil, signal // Propagate signal upwards
 			}
@@ -212,7 +281,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 				break
 			}
 
-			_, signal = eval(e.Body, env, isRepl)
+			_, signal = i.eval(e.Body, env, isRepl)
 			if signal.Type == ControlFlowBreak {
 				break // Exit the loop
 			}
@@ -222,7 +291,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 	case *ast.ForStmt:
 		// Execute the initializer
 		if e.Initializer != nil {
-			_, signal := eval(e.Initializer, env, isRepl)
+			_, signal := i.eval(e.Initializer, env, isRepl)
 			if signal.Type != ControlFlowNone {
 				return nil, signal
 			}
@@ -231,7 +300,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 		for {
 			// Check the condition
 			if e.Condition != nil {
-				condVal, signal := eval(e.Condition, env, isRepl)
+				condVal, signal := i.eval(e.Condition, env, isRepl)
 				if signal.Type != ControlFlowNone {
 					return nil, signal
 				}
@@ -241,7 +310,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 			}
 
 			// Execute the body
-			_, signal := eval(e.Body, env, isRepl)
+			_, signal := i.eval(e.Body, env, isRepl)
 			if signal.Type == ControlFlowBreak {
 				break
 			}
@@ -253,7 +322,7 @@ func eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}
 
 			// Execute the increment
 			if e.Increment != nil {
-				_, signal := eval(e.Increment, env, isRepl)
+				_, signal := i.eval(e.Increment, env, isRepl)
 				if signal.Type != ControlFlowNone {
 					return nil, signal
 				}
