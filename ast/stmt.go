@@ -148,3 +148,29 @@ type ContinueStmt struct {
 func (b *ContinueStmt) String() string {
 	return "continue"
 }
+
+type FunctionStmt struct {
+	Name   token.Token
+	Params []token.Token
+	Body   []Stmt
+}
+
+func (f *FunctionStmt) String() string {
+	// Convert the list of parameters to a comma-separated string
+	paramNames := ""
+	for i, param := range f.Params {
+		if i != 0 {
+			paramNames += ", "
+		}
+		paramNames += param.Lexeme
+	}
+
+	// Convert the body statements to a string
+	bodyStr := ""
+	for _, stmt := range f.Body {
+		bodyStr += stmt.String() + "\n"
+	}
+
+	// Return the function's string representation
+	return fmt.Sprintf("fun %s(%s) {\n%s}", f.Name.Lexeme, paramNames, bodyStr)
+}

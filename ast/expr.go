@@ -75,3 +75,22 @@ type Logical struct {
 func (l *Logical) String() string {
 	return fmt.Sprintf("(%s %s %s)", l.Left.String(), l.Operator.Lexeme, l.Right.String())
 }
+
+
+// Call represents a function or method call expression.
+type Call struct {
+	Callee    Expr         // The expression that evaluates to the function (callee).
+	Paren     token.Token  // The opening parenthesis of the call (for error reporting).
+	Arguments []Expr       // The list of arguments passed to the function.
+}
+
+func (c *Call) String() string {
+	argStrings := ""
+	for i, arg := range c.Arguments {
+		if i != 0 {
+			argStrings += ", "
+		}
+		argStrings += arg.String()
+	}
+	return fmt.Sprintf("%s(%s)", c.Callee.String(), argStrings)
+}

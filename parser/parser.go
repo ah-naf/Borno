@@ -42,6 +42,9 @@ func (p *Parser) Parse() ([]ast.Stmt, error) {
 }
 
 func (p *Parser) declaration() (ast.Stmt, error) {
+	if p.match(token.FUN) {
+		return p.function("function")
+	}
 	if p.match(token.VAR) {
 		return p.varDeclaration()
 	}
@@ -263,6 +266,54 @@ func (p *Parser) expressionStatement() (ast.Stmt, error) {
 	}
 	p.consume(token.SEMICOLON, "Expect ';' after value.")
 	return &ast.ExpressionStatement{Expression: value}, nil
+}
+
+func (p *Parser) function(kind string) (ast.Stmt, error) {
+	name, err := p.consume(token.IDENTIFIER, "Expect "+kind+" name.")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(token.LEFT_PAREN, "Expect '(' after "+kind+" name.")
+	if err != nil {
+		return nil, err
+	}
+
+	parameters := []token.Token{}
+	if !p.check(token.RIGHT_PAREN) {
+		for {
+			if len(parameters) >= 255 {
+				return nil, p.error(p.peek(), "Can't have more than 255 parameters.")
+			}
+
+			pp, err := p.consume(token.IDENTIFIER, "Expect parameter name.")
+			if err != nil {
+				return nil, err
+			}
+			parameters = append(parameters, pp)
+
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+	_, err = p.consume(token.RIGHT_PAREN, "Expect ')' after parameters.")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(token.LEFT_BRACE, "Expect '{' before "+kind+" body.")
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := p.block()
+	if err != nil {
+		return nil, err
+	}
+
+
+	return &ast.FunctionStmt{Name: name, Params: parameters, Body: body}, nil
 }
 
 func (p *Parser) block() ([]ast.Stmt, error) {
@@ -556,7 +607,63 @@ func (p *Parser) unary() (ast.Expr, error) {
 		return &ast.Unary{Operator: operator, Right: right, Line: operator.Line}, nil
 	}
 
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() (ast.Expr, error) {
+	// Start by parsing the primary expression (the callee).
+	expr, err := p.primary()
+	if err != nil {
+		return nil, err
+	}
+
+	// Continue to check for function calls (which may be chained).
+	for {
+		if p.match(token.LEFT_PAREN) {
+			// If the next token is '(', finish parsing the call expression.
+			expr, err = p.finishCall(expr)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			break // No more call expressions to parse.
+		}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, error) {
+	// Parse the arguments inside the parentheses.
+	arguments := []ast.Expr{}
+
+	if !p.check(token.RIGHT_PAREN) { // If there are arguments to parse.
+		for {
+			arg, err := p.expression()
+			if err != nil {
+				return nil, err
+			}
+			arguments = append(arguments, arg)
+
+			// Continue parsing arguments separated by commas.
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	// Ensure the call expression ends with a closing parenthesis.
+	paren, err := p.consume(token.RIGHT_PAREN, "Expect ')' after arguments.")
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the call expression node.
+	return &ast.Call{
+		Callee:    callee,
+		Paren:     paren,     // This stores the right parenthesis token for error reporting.
+		Arguments: arguments, // The list of parsed arguments.
+	}, nil
 }
 
 func (p *Parser) primary() (ast.Expr, error) {

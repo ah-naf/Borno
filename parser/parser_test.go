@@ -326,7 +326,7 @@ continue
 			expectErr: false,
 		},
 		{
-			name: "Simple For Loop",
+			name:  "Simple For Loop",
 			input: `for (var i = 0; i < 10; i = i + 1) { print i; }`,
 			expected: `for (var i = 0; (i < 10); (i = (i + 1))) {
 (print i)
@@ -334,7 +334,7 @@ continue
 			expectErr: false,
 		},
 		{
-			name: "For Loop Without Initializer",
+			name:  "For Loop Without Initializer",
 			input: `for (; i < 10; i = i + 1) { print i; }`,
 			expected: `for (; (i < 10); (i = (i + 1))) {
 (print i)
@@ -342,7 +342,7 @@ continue
 			expectErr: false,
 		},
 		{
-			name: "For Loop Without Condition",
+			name:  "For Loop Without Condition",
 			input: `for (var i = 0;; i = i + 1) { print i; }`,
 			expected: `for (var i = 0; true; (i = (i + 1))) {
 (print i)
@@ -350,7 +350,7 @@ continue
 			expectErr: false,
 		},
 		{
-			name: "For Loop Without Increment",
+			name:  "For Loop Without Increment",
 			input: `for (var i = 0; i < 10;) { print i; i = i + 1; }`,
 			expected: `for (var i = 0; (i < 10); ) {
 (print i)
@@ -359,7 +359,7 @@ continue
 			expectErr: false,
 		},
 		{
-			name: "For Loop Without All Clauses",
+			name:  "For Loop Without All Clauses",
 			input: `for (;;) { print "infinite"; }`,
 			expected: `for (; true; ) {
 (print infinite)
@@ -367,10 +367,67 @@ continue
 			expectErr: false,
 		},
 		{
-			name: "Invalid For Loop",
-			input: `for var i = 0; i < 10; i = i + 1 { print i; }`,
-			expected: "",
+			name:      "Invalid For Loop",
+			input:     `for var i = 0; i < 10; i = i + 1 { print i; }`,
+			expected:  "",
 			expectErr: true,
+		},
+		{
+			name: "Basic Function",
+			input: `fun add(a, b) {
+print a + b;
+}`,
+			expected: `fun add(a, b) {
+(print (a + b))
+}`,
+			expectErr: false,
+		},
+		{
+			name:      "Basic Function Call",
+			input:     `add(a, b);`,
+			expected:  `add(a, b)`,
+			expectErr: false,
+		},
+		{
+			name:      "Function Call Error",
+			input:     `add(a,);`,
+			expected:  ``,
+			expectErr: true,
+		},
+		{
+			name: "Simple Function Declaration",
+			input: `fun sayHello() {
+	print "Hello!";
+}`,
+			expected: `fun sayHello() {
+(print Hello!)
+}`,
+			expectErr: false,
+		},
+
+		{
+			name:      "Function Call Without Arguments",
+			input:     `sayHello();`,
+			expected:  `sayHello()`,
+			expectErr: false,
+		},
+		{
+			name:      "Function Call With Arguments",
+			input:     `add(5, 10);`,
+			expected:  `add(5, 10)`,
+			expectErr: false,
+		},
+		{
+			name:      "Invalid Function Call with Trailing Comma",
+			input:     `add(5,);`,
+			expected:  "",
+			expectErr: true,
+		},
+		{
+			name:      "Nested Function Call",
+			input:     `add(multiply(2, 3), 5);`,
+			expected:  `add(multiply(2, 3), 5)`,
+			expectErr: false,
 		},
 	}
 	for _, tt := range tests {
