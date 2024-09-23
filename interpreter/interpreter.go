@@ -75,7 +75,6 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 
 	case *ast.Call:
 		// Step 1: Evaluate the callee (the thing being called)
-
 		callee, signal := i.eval(e.Callee, env, isRepl)
 
 		if signal.Type != ControlFlowNone {
@@ -84,13 +83,13 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 
 		// Ensure the callee is a callable function
 		function, ok := callee.(Callable)
-		if len(e.Arguments) != function.Arity() {
-			utils.RuntimeError(e.Paren, fmt.Sprintf("Expected %d arguments but %d.", function.Arity(), len(e.Arguments)))
+		if !ok {
+			utils.RuntimeError(e.Paren, "Can only call functions or classes.")
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
 
-		if !ok {
-			utils.RuntimeError(e.Paren, "Can only call functions or classes.")
+		if len(e.Arguments) != function.Arity() {
+			utils.RuntimeError(e.Paren, fmt.Sprintf("Expected %d arguments but %d.", function.Arity(), len(e.Arguments)))
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
 
@@ -305,7 +304,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 					break
 				}
 			}
-
+			fmt.Printf("%#v", e.Body)
 			// Execute the body
 			_, signal := i.eval(e.Body, env, isRepl)
 			if signal.Type == ControlFlowBreak {
@@ -598,6 +597,12 @@ func isTruthy(value interface{}) bool {
 	if str, ok := value.(string); ok {
 		// An empty string should be false, non-empty string should be true
 		return str != ""
+	}
+	if num, ok := value.(int64); ok {
+		return num != 0
+	}
+	if num, ok := value.(int); ok {
+		return num != 0
 	}
 	return true // Everything else is considered true
 }

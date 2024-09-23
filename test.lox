@@ -1,5 +1,10 @@
-fun sayHi(first, last) {
-  print "Hi, " + first + " " + last + "!";
+fun count(n) {
+  for(var i=0; i<n; i=i+1) {
+    if(!(i&1)) {
+      continue;
+    }
+    print i;
+  }
 }
 
-sayHi("Dear", "Reader");
+count(3);
