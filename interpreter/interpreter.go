@@ -12,7 +12,6 @@ import (
 
 // Interpreter struct represents the execution context for evaluating expressions and statements.
 type Interpreter struct {
-	env     *environment.Environment
 	globals *environment.Environment
 }
 
@@ -30,7 +29,6 @@ func NewInterpreter() *Interpreter {
 
 	// Then, create the Interpreter instance with the global environment
 	i := &Interpreter{
-		env:     globals, // The interpreter starts with the global environment
 		globals: globals, // Store the reference to the global environment
 	}
 
@@ -77,10 +75,9 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 
 	case *ast.Call:
 		// Step 1: Evaluate the callee (the thing being called)
-		
+
 		callee, signal := i.eval(e.Callee, env, isRepl)
 
-		
 		if signal.Type != ControlFlowNone {
 			return nil, signal
 		}
