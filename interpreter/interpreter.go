@@ -73,7 +73,7 @@ func (i *Interpreter) Interpret(statements []ast.Stmt, isRepl bool) []interface{
 func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}, *ControlFlowSignal) {
 	switch e := expr.(type) {
 	case *ast.FunctionStmt:
-		function := NewFunction(e)
+		function := NewFunction(e, environment.NewEnvironmentWithParent(env))
 		// fmt.Printf("%#v %#v\n",e.Name.Lexeme, function)
 		env.Define(e.Name.Lexeme, function)
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}

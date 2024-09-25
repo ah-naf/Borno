@@ -28,14 +28,15 @@ func (n NativeClockFn) String() string {
 
 type Function struct {
 	Declaration *ast.FunctionStmt
+	Closure     *environment.Environment
 }
 
-func NewFunction(declaration *ast.FunctionStmt) *Function {
-	return &Function{Declaration: declaration}
+func NewFunction(declaration *ast.FunctionStmt, closure *environment.Environment) *Function {
+	return &Function{Declaration: declaration, Closure: closure}
 }
 
 func (f *Function) Call(i *Interpreter, arguments []interface{}) (interface{}, error) {
-	functionEnv := environment.NewEnvironmentWithParent(i.globals)
+	functionEnv := environment.NewEnvironmentWithParent(f.Closure)
 
 	functionEnv.Define(f.Declaration.Name.Lexeme, f)
 
