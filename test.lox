@@ -1,10 +1,8 @@
-fun count(n) {
-  for(var i=0; i<n; i=i+1) {
-    if(!(i&1)) {
-      continue;
-    }
-    print i;
-  }
+fun fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 2) + fib(n - 1);
 }
 
-count(3);
+for (var i = 0; i < 20; i = i + 1) {
+  print fib(i);
+}

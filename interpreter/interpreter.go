@@ -18,6 +18,7 @@ type Interpreter struct {
 type ControlFlowSignal struct {
 	Type       int
 	LineNumber int
+	Value      interface{}
 }
 
 // NewInterpreter creates a new instance of the Interpreter with the given environment.
@@ -39,6 +40,7 @@ const (
 	ControlFlowNone int = iota
 	ControlFlowBreak
 	ControlFlowContinue
+	ControlFlowReturn
 )
 
 func (i *Interpreter) Interpret(statements []ast.Stmt, isRepl bool) []interface{} {
@@ -53,6 +55,9 @@ func (i *Interpreter) Interpret(statements []ast.Stmt, isRepl bool) []interface{
 			return nil
 		} else if signal.Type == ControlFlowContinue {
 			utils.RuntimeError(token.Token{Line: signal.LineNumber}, "Unexpected 'continue' outside of loop.")
+			return nil
+		} else if signal.Type == ControlFlowReturn {
+			utils.RuntimeError(token.Token{Line: signal.LineNumber}, "Unexpected 'return' outside of function.")
 			return nil
 		}
 		// fmt.Printf("%#v\n", result)
@@ -72,6 +77,17 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		// fmt.Printf("%#v %#v\n",e.Name.Lexeme, function)
 		env.Define(e.Name.Lexeme, function)
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
+	case *ast.Return:
+		var value interface{}
+		if e.Value != nil {
+			v, signal := i.eval(e.Value, env, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal
+			}
+			value = v
+		}
+		return nil, &ControlFlowSignal{Type: ControlFlowReturn, Value: value}
 
 	case *ast.Call:
 		// Step 1: Evaluate the callee (the thing being called)
@@ -304,7 +320,6 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 					break
 				}
 			}
-			fmt.Printf("%#v", e.Body)
 			// Execute the body
 			_, signal := i.eval(e.Body, env, isRepl)
 			if signal.Type == ControlFlowBreak {

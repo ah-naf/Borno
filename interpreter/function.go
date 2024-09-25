@@ -45,6 +45,9 @@ func (f *Function) Call(i *Interpreter, arguments []interface{}) (interface{}, e
 
 	for _, statment := range f.Declaration.Body {
 		_, signal := i.eval(statment, functionEnv, false)
+		if signal.Type == ControlFlowReturn {
+			return signal.Value, nil
+		}
 		if signal.Type != ControlFlowNone {
 			return nil, nil // You can later add support for return values.
 		}

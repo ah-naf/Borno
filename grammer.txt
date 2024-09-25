@@ -18,8 +18,10 @@ statement      → exprStmt
                | printStmt
                | block
                | breakStmt
-               | continueStmt ;
+               | continueStmt
+               | returnStmt ;
 
+returnStmt     → "return" expression? ";" ;
 breakStmt      → "break" ";" ;
 continueStmt   → "continue" ";" ;
 
