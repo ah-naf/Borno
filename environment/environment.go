@@ -38,6 +38,14 @@ func (e *Environment) Get(name string) (interface{}, error) {
 	return nil, fmt.Errorf("undefined variable '%s'", name)
 }
 
+func (e *Environment) GetInCurrentScope(name string) (interface{}, error) {
+    if value, exists := e.Values[name]; exists {
+        return value, nil
+    }
+    return nil, fmt.Errorf("undefined variable '%s'", name)
+}
+
+
 func (e *Environment) Assign(name token.Token, value interface{}) {
 	if _, exists := e.Values[name.Lexeme]; exists {
 		e.Values[name.Lexeme] = value

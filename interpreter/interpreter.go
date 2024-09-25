@@ -45,7 +45,7 @@ const (
 
 func (i *Interpreter) Interpret(statements []ast.Stmt, isRepl bool) []interface{} {
 	var results []interface{}
-	env := environment.NewEnvironment()
+	env := environment.NewEnvironmentWithParent(i.globals)
 
 	for _, statement := range statements {
 		// fmt.Printf("%#v\n", statement)
@@ -195,7 +195,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			}
 			value = v
 		}
-		_, err := env.Get(e.Name.Lexeme)
+		_, err := env.GetInCurrentScope(e.Name.Lexeme)
 		if err != nil {
 			env.Define(e.Name.Lexeme, value)
 		} else {
