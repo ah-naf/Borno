@@ -186,3 +186,15 @@ type ArrayAssignment struct {
 func (a *ArrayAssignment) String() string {
 	return fmt.Sprintf("(%s[%s] = %s)", a.Array, a.Index, a.Value)
 }
+
+// PropertyAssignment represents assigning a value to an object's property.
+type PropertyAssignment struct {
+	Object   Expr
+	Property token.Token
+	Value    Expr
+	Line     int
+}
+
+func (p *PropertyAssignment) String() string {
+	return fmt.Sprintf("%s.%s = %s", p.Object.String(), p.Property.Lexeme, p.Value.String())
+}

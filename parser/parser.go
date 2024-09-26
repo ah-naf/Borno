@@ -374,6 +374,7 @@ func (p *Parser) assignment() (ast.Expr, error) {
 			return nil, err
 		}
 
+		// fmt.Printf("%#v\n", expr)
 		// Ensure that the left-hand side is a valid assignment target
 		switch target := expr.(type) {
 		case *ast.Identifier:
@@ -390,6 +391,14 @@ func (p *Parser) assignment() (ast.Expr, error) {
 				Index: target.Index,
 				Value: value,
 				Line:  equalOperator.Line,
+			}, nil
+		case *ast.PropertyAccess:
+			// Handle object property access assignment
+			return &ast.PropertyAssignment{
+				Object:   target.Object,
+				Property: target.Property,
+				Value:    value,
+				Line:     equalOperator.Line,
 			}, nil
 		default:
 			// If the left-hand side is neither, throw an error
@@ -667,6 +676,14 @@ func (p *Parser) call() (ast.Expr, error) {
 				return nil, err
 			}
 			expr = &ast.ArrayAccess{Array: expr, Index: index, Line: p.previous().Line}
+			fmt.Printf("%#v\n", expr)
+		} else if p.match(token.DOT) {
+			// Handle property access
+			propName, err := p.consume(token.IDENTIFIER, "Expect property name after '.'.")
+			if err != nil {
+				return nil, err
+			}
+			expr = &ast.PropertyAccess{Object: expr, Property: propName, Line: p.previous().Line}
 		} else {
 			break // No more call expressions to parse.
 		}
@@ -748,7 +765,51 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return p.arrayLiteral()
 	}
 
+	// Parse object literals
+	if p.match(token.LEFT_BRACE) {
+		return p.objectLiteral()
+	}
+
 	return nil, p.error(p.peek(), "Unexpected token. Expect expression.")
+}
+
+func (p *Parser) objectLiteral() (ast.Expr, error) {
+	properties := make(map[string]ast.Expr)
+
+	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		propName, err := p.consume(token.IDENTIFIER, "Expect property name. Must be a string.")
+		if err != nil {
+			return nil, err
+		}
+
+		// Expect a colon `:` after the property name
+		_, err = p.consume(token.COLON, "Expect ':' after property name.")
+		if err != nil {
+			return nil, err
+		}
+
+		// Parse the property value (expression)
+		propValue, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+
+		// Store the property in the map
+		properties[propName.Lexeme] = propValue
+
+		// If there's no comma, break out of the loop
+		if !p.match(token.COMMA) {
+			break
+		}
+	}
+
+	// Expect the closing right brace `}`
+	_, err := p.consume(token.RIGHT_BRACE, "Expect '}' after object literal.")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.ObjectLiteral{Properties: properties}, nil
 }
 
 // New function to handle array literals

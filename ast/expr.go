@@ -131,3 +131,32 @@ type ArrayAccess struct {
 func (a *ArrayAccess) String() string {
 	return fmt.Sprintf("%v[%v]", a.Array, a.Index)
 }
+
+// ObjectLiteral represents an object literal in the source code.
+type ObjectLiteral struct {
+	Properties map[string]Expr
+}
+
+func (o *ObjectLiteral) String() string {
+	val := "{"
+	i := 0
+	for key, value := range o.Properties {
+		if i > 0 {
+			val += ", "
+		}
+		val += fmt.Sprintf("%s: %s", key, value.String())
+		i++
+	}
+	val += "}"
+	return val
+}
+
+type PropertyAccess struct {
+	Object   Expr
+	Property token.Token
+	Line     int
+}
+
+func (p *PropertyAccess) String() string {
+	return fmt.Sprintf("%s.%s", p.Object.String(), p.Property.Lexeme)
+}

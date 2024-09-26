@@ -38,6 +38,7 @@ printStmt      → "print" expression ";" ;
 
 expression     → assignment ;
 assignment     → IDENTIFIER "=" assignment
+               | arrayAccess "=" assignment
                | propertyAccess "=" assignment 
                | logic_or ;
 
