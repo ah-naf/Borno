@@ -74,7 +74,66 @@ func (i *Interpreter) Interpret(statements []ast.Stmt, isRepl bool) []interface{
 }
 
 func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}, *ControlFlowSignal) {
+	// fmt.Printf("%T\n", expr)
 	switch e := expr.(type) {
+	case *ast.PropertyAssignment:
+		objectValue, signal := i.eval(e.Object, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
+
+		// Ensure the object is a map
+		object, ok := objectValue.(map[string]interface{})
+		if !ok {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Invalid object assignment. Not an object.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		// Evaluate the new value to assign
+		newValue, signal := i.eval(e.Value, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
+
+		// Assign the new value to the property
+		propertyName := e.Property.Lexeme
+		object[propertyName] = newValue
+
+		return newValue, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+	case *ast.ObjectLiteral:
+		properties := make(map[string]interface{})
+
+		for key, valueExpr := range e.Properties {
+			value, signal := i.eval(valueExpr, env, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal
+			}
+			properties[key] = value
+		}
+
+		return properties, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
+	case *ast.PropertyAccess:
+		objectValue, signal := i.eval(e.Object, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
+
+		object, ok := objectValue.(map[string]interface{})
+		if !ok {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Invalid property access. Not an object.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		propertyName := e.Property.Lexeme
+		value, exists := object[propertyName]
+		if !exists {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Property '"+propertyName+"' does not exist on object '"+e.Object.String()+"'.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		return value, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
 	case *ast.ArrayLiteral:
 		elements := []interface{}{}
 		for _, element := range e.Elements {
@@ -96,10 +155,10 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		if signal.Type != ControlFlowNone {
 			return nil, signal
 		}
-		
+
 		// Ensure the array is a slice and the index is a number
 		array, ok := arrayValue.([]interface{})
-		
+
 		if !ok {
 			utils.RuntimeError(token.Token{Line: e.Line}, "Invalid array access. Not an array.")
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}

@@ -682,7 +682,7 @@ func (p *Parser) call() (ast.Expr, error) {
 				return nil, err
 			}
 			expr = &ast.ArrayAccess{Array: expr, Index: index, Line: p.previous().Line}
-			fmt.Printf("%#v\n", expr)
+			// fmt.Printf("%#v\n", expr)
 		} else if p.match(token.DOT) {
 			// Handle property access
 			propName, err := p.consume(token.IDENTIFIER, "Expect property name after '.'.")

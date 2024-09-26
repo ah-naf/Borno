@@ -1,6 +1,13 @@
+fun func1() {
+  print "hi";
+}
+
+fun func2() {
+  print "hi2";
+}
+
 var a = {
-  name: "ahnaf",
-  detail: {
-    age: 20
-  }
+  func: [func1, func2]
 };
+
+a.func[1]();
