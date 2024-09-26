@@ -83,6 +83,8 @@ func (s *Scanner) scanToken() {
 		s.addToken(token.DOT)
 	case '-':
 		s.addToken(token.MINUS)
+	case ':':
+		s.addToken(token.COLON)
 	case '+':
 		s.addToken(token.PLUS)
 	case ';':

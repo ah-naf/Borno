@@ -53,13 +53,13 @@ func TestScanTokens(t *testing.T) {
 		},
 		{
 			name:  "Single character tokens",
-			input: "(){}[],.-+;*|&^~%",
+			input: "(){}[],.-+;*|&^~%:",
 			expected: []token.TokenType{
 				token.LEFT_PAREN, token.RIGHT_PAREN, token.LEFT_BRACE, token.RIGHT_BRACE,
 				token.LEFT_BRACKET, token.RIGHT_BRACKET,
 				token.COMMA, token.DOT, token.MINUS, token.PLUS, token.SEMICOLON, token.STAR,
 				token.OR, token.AND, token.XOR, token.NOT, token.MODULO,
-				token.EOF,
+				token.COLON, token.EOF,
 			},
 		},
 		{

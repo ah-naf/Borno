@@ -19,6 +19,7 @@ const (
 	MINUS
 	PLUS
 	SEMICOLON
+	COLON
 	SLASH
 	STAR
 	AND

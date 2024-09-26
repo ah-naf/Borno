@@ -32,13 +32,16 @@ whileStmt      → "while" "(" expression ")" statement ;
 ifStmt         → "if" "(" expression ")" statement
                ( "else" statement )? ;
 
-block          → "{" declaration "}" ;
+block          → "{" declaration* "}" ;
 exprStmt       → expression ";" ;
 printStmt      → "print" expression ";" ;
 
-
 expression     → assignment ;
-assignment     → IDENTIFIER "=" assignment | logic_or ;
+assignment     → IDENTIFIER "=" assignment
+               | propertyAccess "=" assignment 
+               | logic_or ;
+
+propertyAccess → primary "." IDENTIFIER ;
 
 logic_or       → logic_and ( ( "or" | "||" ) logic_and )* ;
 logic_and      → bitwise_or ( ( "and" | "&&" ) bitwise_or )* ;
@@ -55,12 +58,19 @@ unary          → ( "!" | "-" | "~" ) unary
                | call ;
 
 call           → primary ( "(" arguments? ")" )* 
-               | arrayAccess;
+               | arrayAccess
+               | propertyAccess ;
 
 arrayAccess    → primary "[" expression "]" ;
 arguments      → expression ( "," expression )* ;
 
 primary        → NUMBER | STRING | "true" | "false" | "nil"
-               | "(" expression ")" | IDENTIFIER | arrayLiteral ;
+               | "(" expression ")" 
+               | IDENTIFIER 
+               | arrayLiteral
+               | objectLiteral ;
 
 arrayLiteral   → "[" ( expression ( "," expression )* )? "]" ;
+
+objectLiteral  → "{" ( property ( "," property )* )? "}" ;
+property       → IDENTIFIER ":" expression ;
