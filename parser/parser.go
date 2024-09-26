@@ -273,12 +273,12 @@ func (p *Parser) returnStatement() (ast.Stmt, error) {
 		}
 		value = v
 	}
-	
+
 	_, err := p.consume(token.SEMICOLON, "Expect ';' after return value.")
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &ast.Return{Keyword: keyword, Value: value}, nil
 }
 
@@ -375,17 +375,26 @@ func (p *Parser) assignment() (ast.Expr, error) {
 		}
 
 		// Ensure that the left-hand side is a valid assignment target
-		if identifier, ok := expr.(*ast.Identifier); ok {
-			// Return the AssignmentStmt with the identifier as the target and the value as the expression
+		switch target := expr.(type) {
+		case *ast.Identifier:
+			// If the left-hand side is an identifier, it's a valid assignment target
 			return &ast.AssignmentStmt{
-				Name:  identifier.Name, // Set the name of the variable
+				Name:  target.Name,
 				Value: value,
 				Line:  equalOperator.Line,
 			}, nil
+		case *ast.ArrayAccess:
+			// If the left-hand side is an array access, it's also a valid assignment target
+			return &ast.ArrayAssignment{
+				Array: target.Array,
+				Index: target.Index,
+				Value: value,
+				Line:  equalOperator.Line,
+			}, nil
+		default:
+			// If the left-hand side is neither, throw an error
+			return nil, p.error(equalOperator, "Invalid assignment target.")
 		}
-
-		// If the left-hand side is not a valid assignment target, throw an error
-		p.error(equalOperator, "Invalid assignment target.")
 	}
 
 	// If no assignment, return the original expression
@@ -647,6 +656,17 @@ func (p *Parser) call() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
+		} else if p.match(token.LEFT_BRACKET) {
+			index, err := p.expression()
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = p.consume(token.RIGHT_BRACKET, "Expect ']' after array index.")
+			if err != nil {
+				return nil, err
+			}
+			expr = &ast.ArrayAccess{Array: expr, Index: index, Line: p.previous().Line}
 		} else {
 			break // No more call expressions to parse.
 		}
@@ -723,7 +743,39 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.Grouping{Expression: expr, Line: p.previous().Line}, nil
 	}
 
+	// Parse array literals
+	if p.match(token.LEFT_BRACKET) {
+		return p.arrayLiteral()
+	}
+
 	return nil, p.error(p.peek(), "Unexpected token. Expect expression.")
+}
+
+// New function to handle array literals
+func (p *Parser) arrayLiteral() (ast.Expr, error) {
+	elements := []ast.Expr{}
+
+	if !p.check(token.RIGHT_BRACKET) { // If the array is not empty
+		for {
+			element, err := p.expression()
+			if err != nil {
+				return nil, err
+			}
+			elements = append(elements, element)
+
+			// Check if there are more elements
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	_, err := p.consume(token.RIGHT_BRACKET, "Expect ']' after array elements.")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.ArrayLiteral{Elements: elements}, nil
 }
 
 func (p *Parser) match(types ...token.TokenType) bool {

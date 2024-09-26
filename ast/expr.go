@@ -102,3 +102,32 @@ type Return struct {
 func (r *Return) String() string {
 	return "return " + r.Value.String()
 }
+
+// ArrayLiteral represents an array literal in the source code.
+type ArrayLiteral struct {
+	Elements []Expr
+	Line     int
+}
+
+func (a *ArrayLiteral) String() string {
+	val := "["
+	for i, e := range a.Elements {
+		val += e.String()
+		if i+1 != len(a.Elements) {
+			val += ", "
+		}
+	}
+	val += "]"
+	return val
+}
+
+// ArrayAccess represents accessing an element from an array.
+type ArrayAccess struct {
+	Array Expr
+	Index Expr
+	Line  int
+}
+
+func (a *ArrayAccess) String() string {
+	return fmt.Sprintf("%v[%v]", a.Array, a.Index)
+}

@@ -174,3 +174,15 @@ func (f *FunctionStmt) String() string {
 	// Return the function's string representation
 	return fmt.Sprintf("fun %s(%s) {\n%s}", f.Name.Lexeme, paramNames, bodyStr)
 }
+
+
+type ArrayAssignment struct {
+	Array Expr   // The array being assigned to
+	Index Expr   // The index of the element being assigned to
+	Value Expr   // The new value being assigned
+	Line  int    // The line number of the assignment
+}
+
+func (a *ArrayAssignment) String() string {
+	return fmt.Sprintf("(%s[%s] = %s)", a.Array, a.Index, a.Value)
+}
