@@ -54,8 +54,13 @@ power          → unary ( "**" unary )* ;
 unary          → ( "!" | "-" | "~" ) unary
                | call ;
 
-call           → primary ( "(" arguments? ")" )* ;
+call           → primary ( "(" arguments? ")" )* 
+               | arrayAccess;
+
+arrayAccess    → primary "[" expression "]" ;
 arguments      → expression ( "," expression )* ;
 
 primary        → NUMBER | STRING | "true" | "false" | "nil"
-               | "(" expression ")" | IDENTIFIER ;
+               | "(" expression ")" | IDENTIFIER | arrayLiteral ;
+
+arrayLiteral   → "[" ( expression ( "," expression )* )? "]" ;
