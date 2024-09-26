@@ -489,6 +489,66 @@ print a + b;
 			expected:  "arr[0]()",
 			expectErr: false,
 		},
+		{
+			name:      "Object Literal",
+			input:     `var obj = {name: "Alice", age: 30, height: 5.9};`,
+			expected:  `var obj = {name: Alice, age: 30, height: 5.9}`,
+			expectErr: false,
+		},
+		{
+			name:      "Object with Numeric Keys",
+			input:     `var obj = {1: "one", 2: "two"};`,
+			expected:  ``,
+			expectErr: true,
+		},
+		{
+			name:      "Empty Object Literal",
+			input:     `var obj = {};`,
+			expected:  `var obj = {}`,
+			expectErr: false,
+		},
+		{
+			name:      "Object Property Access",
+			input:     `obj.name;`,
+			expected:  `obj.name`,
+			expectErr: false,
+		},
+		{
+			name:      "Object Property Assignment",
+			input:     `obj.name = "Bob";`,
+			expected:  `obj.name = Bob`,
+			expectErr: false,
+		},
+		{
+			name:      "Nested Object Access",
+			input:     `person.address.street;`,
+			expected:  `person.address.street`,
+			expectErr: false,
+		},
+		{
+			name:      "Nested Object Assignment",
+			input:     `person.address.street = "Main St";`,
+			expected:  `person.address.street = Main St`,
+			expectErr: false,
+		},
+		{
+			name:      "Invalid Property Access",
+			input:     `obj.;`,
+			expected:  "",
+			expectErr: true,
+		},
+		{
+			name:      "Object Property Access with Array",
+			input:     `person.children[0].name;`,
+			expected:  `person.children[0].name`,
+			expectErr: false,
+		},
+		{
+			name:      "Object Property Assignment with Array",
+			input:     `person.children[0].name = "Charlie";`,
+			expected:  `person.children[0].name = Charlie`,
+			expectErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

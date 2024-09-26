@@ -57,7 +57,6 @@ func runPrompt() {
 func run(source string, isRepl bool) {
 	scanner := lexer.NewScanner(source)
 	tokens := scanner.ScanTokens()
-
 	Parser := parser.NewParser(tokens)
 	expr, _ := Parser.Parse()
 

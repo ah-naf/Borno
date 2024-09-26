@@ -76,9 +76,15 @@ func (p *Parser) varDeclaration() (ast.Stmt, error) {
 		declaration := &ast.VarStmt{Name: name, Initializer: initializer, Line: name.Line}
 		declarations = append(declarations, *declaration)
 
-		// Check for newline and semicolon before proceeding to the next variable
-		if p.peek().Line != initialLine {
-			return nil, p.error(p.peek(), "Expect ';' before newline.")
+		// Check for newline and semicolon before proceeding to the next variable,
+		// but skip this check if the initializer is an object or array literal.
+		switch initializer.(type) {
+		case *ast.ObjectLiteral, *ast.ArrayLiteral:
+			// Skip newline check for ObjectLiteral and ArrayLiteral
+		default:
+			if p.peek().Line != initialLine {
+				return nil, p.error(p.peek(), "Expect ';' before newline.")
+			}
 		}
 
 		// If no more commas, break out of the loop
@@ -794,6 +800,7 @@ func (p *Parser) objectLiteral() (ast.Expr, error) {
 			return nil, err
 		}
 
+		// fmt.Printf("%#v ---- %#v\n", propName, propValue)
 		// Store the property in the map
 		properties[propName.Lexeme] = propValue
 
@@ -808,7 +815,6 @@ func (p *Parser) objectLiteral() (ast.Expr, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &ast.ObjectLiteral{Properties: properties}, nil
 }
 

@@ -1,5 +1,6 @@
-var a = {name: "alice", age: 20};
-var b = [2];
-
-a.name = "shifat";
-b[0] = 1;
+var a = {
+  name: "ahnaf",
+  detail: {
+    age: 20
+  }
+};
