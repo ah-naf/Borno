@@ -1,1 +1,6 @@
-a[0]();
+fun func() {
+  print "Hello";
+}
+
+var a = [1, 2, func];
+print a[2]();

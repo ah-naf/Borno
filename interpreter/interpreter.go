@@ -72,6 +72,87 @@ func (i *Interpreter) Interpret(statements []ast.Stmt, isRepl bool) []interface{
 
 func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}, *ControlFlowSignal) {
 	switch e := expr.(type) {
+	case *ast.ArrayLiteral:
+		elements := []interface{}{}
+		for _, element := range e.Elements {
+			value, signal := i.eval(element, env, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal
+			}
+			elements = append(elements, value)
+		}
+		return elements, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
+	case *ast.ArrayAccess:
+		arrayValue, signal := i.eval(e.Array, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
+
+		indexValue, signal := i.eval(e.Index, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
+		
+		// Ensure the array is a slice and the index is a number
+		array, ok := arrayValue.([]interface{})
+		
+		if !ok {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Invalid array access. Not an array.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		index, err := toInt64(indexValue)
+		if err != nil {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Array index must be an integer.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		if index < 0 || int(index) >= len(array) {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Array index out of bounds.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		return array[index], &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
+	case *ast.ArrayAssignment:
+		arrayValue, signal := i.eval(e.Array, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
+
+		indexValue, signal := i.eval(e.Index, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
+
+		newValue, signal := i.eval(e.Value, env, isRepl)
+		if signal.Type != ControlFlowNone {
+			return nil, signal
+		}
+
+		// Ensure the array is a slice and the index is a number
+		array, ok := arrayValue.([]interface{})
+		if !ok {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Invalid array assignment. Not an array.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		index, err := toInt64(indexValue)
+		if err != nil {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Array index must be an integer.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		if index < 0 || int(index) >= len(array) {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Array index out of bounds.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		// Update the array element
+		array[index] = newValue
+		return newValue, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
 	case *ast.FunctionStmt:
 		function := NewFunction(e, environment.NewEnvironmentWithParent(env))
 		// fmt.Printf("%#v %#v\n",e.Name.Lexeme, function)
