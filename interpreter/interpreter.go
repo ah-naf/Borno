@@ -27,6 +27,9 @@ func NewInterpreter() *Interpreter {
 	globals := environment.NewEnvironment()
 
 	globals.Define("clock", NativeClockFn{})
+	globals.Define("len", NativeLenFn{})
+	globals.Define("append", NativeAppendFn{}) // Register `append` function
+	globals.Define("remove", NativeRemoveFn{})
 
 	// Then, create the Interpreter instance with the global environment
 	i := &Interpreter{
@@ -185,7 +188,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
 
-		if len(e.Arguments) != function.Arity() {
+		if function.Arity() != -1 && len(e.Arguments) != function.Arity() {
 			utils.RuntimeError(e.Paren, fmt.Sprintf("Expected %d arguments but %d.", function.Arity(), len(e.Arguments)))
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
