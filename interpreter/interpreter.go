@@ -31,6 +31,18 @@ func NewInterpreter() *Interpreter {
 	globals.Define("append", NativeAppendFn{}) // Register `append` function
 	globals.Define("remove", NativeRemoveFn{})
 	globals.Define("delete", NativeDeleteFn{})
+	globals.Define("keys", NativeKeysFn{})
+	globals.Define("values", NativeValuesFn{})
+
+	globals.Define("abs", NativeAbsFn{})
+	globals.Define("sqrt", NativeSqrtFn{})
+	globals.Define("pow", NativePowFn{})
+	globals.Define("sin", NativeSinFn{})
+	globals.Define("cos", NativeCosFn{})
+	globals.Define("tan", NativeTanFn{})
+	globals.Define("min", NativeMinFn{})
+	globals.Define("max", NativeMaxFn{})
+	globals.Define("round", NativeRoundFn{})
 
 	// Then, create the Interpreter instance with the global environment
 	i := &Interpreter{
