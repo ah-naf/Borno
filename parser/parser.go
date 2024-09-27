@@ -8,6 +8,14 @@ import (
 	"github.com/ah-naf/crafting-interpreter/utils"
 )
 
+var reservedIdentifiers = map[string]bool{
+	"clock":  true,
+	"len":    true,
+	"append": true,
+	"remove": true,
+	"delete": true,
+}
+
 type ParseError struct {
 	message string
 }
@@ -60,6 +68,11 @@ func (p *Parser) varDeclaration() (ast.Stmt, error) {
 		name, err := p.consume(token.IDENTIFIER, "Expect variable name.")
 		if err != nil {
 			return nil, err
+		}
+
+		// Check if the name is a reserved identifier
+		if _, isReserved := reservedIdentifiers[name.Lexeme]; isReserved {
+			return nil, p.error(name, fmt.Sprintf("'%s' is a reserved identifier and cannot be used as a variable name.", name.Lexeme))
 		}
 
 		// Optional initializer
@@ -301,6 +314,10 @@ func (p *Parser) function(kind string) (ast.Stmt, error) {
 	name, err := p.consume(token.IDENTIFIER, "Expect "+kind+" name.")
 	if err != nil {
 		return nil, err
+	}
+
+	if _, isReserved := reservedIdentifiers[name.Lexeme]; isReserved {
+		return nil, p.error(name, fmt.Sprintf("'%s' is a reserved identifier and cannot be used as a function name.", name.Lexeme))
 	}
 
 	_, err = p.consume(token.LEFT_PAREN, "Expect '(' after "+kind+" name.")

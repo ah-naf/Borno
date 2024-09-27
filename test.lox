@@ -1,5 +1,6 @@
 var a = {};
 a.name = "ahnaf";
 a.age = 20;
+var append = 20;
 delete(a, "age");
 print a;
