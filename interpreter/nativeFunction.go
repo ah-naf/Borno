@@ -113,3 +113,42 @@ func (n NativeRemoveFn) Arity() int {
 func (n NativeRemoveFn) String() string {
 	return "<native fn remove>"
 }
+
+
+type NativeDeleteFn struct{}
+
+func (n NativeDeleteFn) Call(i *Interpreter, arguments []interface{}) (interface{}, error) {
+	// Ensure we have exactly 2 arguments: the object and the key
+	if len(arguments) != 2 {
+		return nil, fmt.Errorf("delete function expects exactly 2 arguments (object and key)")
+	}
+
+	// Ensure the first argument is an object (map)
+	object, ok := arguments[0].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("delete function only works on objects")
+	}
+
+	// Ensure the second argument is a string (key)
+	key, ok := arguments[1].(string)
+	if !ok {
+		return nil, fmt.Errorf("delete function expects the second argument to be a string key")
+	}
+
+	// Remove the key if it exists
+	if _, exists := object[key]; exists {
+		delete(object, key)
+	} else {
+		return nil, fmt.Errorf("key '%s' not found in object", key)
+	}
+
+	return object, nil
+}
+
+func (n NativeDeleteFn) Arity() int {
+	return 2 // Two arguments: object and key
+}
+
+func (n NativeDeleteFn) String() string {
+	return "<native fn delete>"
+}

@@ -30,6 +30,7 @@ func NewInterpreter() *Interpreter {
 	globals.Define("len", NativeLenFn{})
 	globals.Define("append", NativeAppendFn{}) // Register `append` function
 	globals.Define("remove", NativeRemoveFn{})
+	globals.Define("delete", NativeDeleteFn{})
 
 	// Then, create the Interpreter instance with the global environment
 	i := &Interpreter{
