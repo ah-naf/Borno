@@ -44,6 +44,8 @@ func NewInterpreter() *Interpreter {
 	globals.Define("max", NativeMaxFn{})
 	globals.Define("round", NativeRoundFn{})
 
+	globals.Define("input", NativeInputFn{})
+
 	// Then, create the Interpreter instance with the global environment
 	i := &Interpreter{
 		globals: globals, // Store the reference to the global environment

@@ -1,6 +1,10 @@
 package interpreter
 
 import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -16,4 +20,42 @@ func (n NativeClockFn) Arity() int {
 
 func (n NativeClockFn) String() string {
 	return "<native fn>"
+}
+
+// NativeInputFn defines the native `input` function for the interpreter.
+type NativeInputFn struct{}
+
+// Call executes the native `input` function.
+func (n NativeInputFn) Call(i *Interpreter, arguments []interface{}) (interface{}, error) {
+	// Check if there's an optional prompt argument
+	if len(arguments) > 1 {
+		return nil, fmt.Errorf("input function accepts at most 1 argument")
+	}
+
+	// If a prompt argument is provided, print it
+	if len(arguments) == 1 {
+		prompt, ok := arguments[0].(string)
+		if !ok {
+			return nil, fmt.Errorf("input function's argument must be a string")
+		}
+		fmt.Print(prompt)
+	}
+
+	// Read the input from the user
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		return nil, fmt.Errorf("failed to read input: %v", err)
+	}
+
+	// Trim the newline characters and return the input string
+	return strings.TrimSpace(input), nil
+}
+
+func (n NativeInputFn) Arity() int {
+	return -1 // Variable number of arguments: 0 or 1 (for prompt)
+}
+
+func (n NativeInputFn) String() string {
+	return "<native fn input>"
 }
