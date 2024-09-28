@@ -1,8 +1,2 @@
-var name = input("Enter your name: ");
-print "Hello, " + name;
-
-var age = input("Enter your age: ");
-print "Your age is " + age;
-
-var comment = input();
-print "You said: " + comment;
+var and = 2;
+print and;

@@ -19,8 +19,6 @@ var keywords = map[string]token.TokenType{
 	"or":       token.LOGICAL_OR,
 	"print":    token.PRINT,
 	"return":   token.RETURN,
-	"super":    token.SUPER,
-	"this":     token.THIS,
 	"true":     token.TRUE,
 	"var":      token.VAR,
 	"while":    token.WHILE,
@@ -59,7 +57,6 @@ func (s *Scanner) ScanTokens() []token.Token {
 	return s.tokens
 }
 
-// scanToken scans a single token
 // scanToken scans a single token
 func (s *Scanner) scanToken() {
 	c := s.advance()

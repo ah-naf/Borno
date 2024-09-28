@@ -14,6 +14,18 @@ var reservedIdentifiers = map[string]bool{
 	"append": true,
 	"remove": true,
 	"delete": true,
+	"keys":   true,
+	"values": true,
+	"abs":    true,
+	"sqrt":   true,
+	"pow":    true,
+	"sin":    true,
+	"cos":    true,
+	"tan":    true,
+	"min":    true,
+	"max":    true,
+	"round":  true,
+	"input":  true,
 }
 
 type ParseError struct {
