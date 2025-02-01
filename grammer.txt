@@ -1,3 +1,5 @@
+--------- ENGLISH -------------
+
 program        → declaration* EOF ;
 
 declaration    → funDecl 
@@ -66,6 +68,87 @@ arrayAccess    → primary "[" expression "]" ;
 arguments      → expression ( "," expression )* ;
 
 primary        → NUMBER | STRING | "true" | "false" | "nil"
+               | "(" expression ")" 
+               | IDENTIFIER 
+               | arrayLiteral
+               | objectLiteral ;
+
+arrayLiteral   → "[" ( expression ( "," expression )* )? "]" ;
+
+objectLiteral  → "{" ( property ( "," property )* )? "}" ;
+property       → IDENTIFIER ":" expression ;
+
+
+--------- বাংলা -------------
+
+program        → declaration* EOF ;
+
+declaration    → funDecl 
+               | varDecl
+               | statement ;
+
+funDecl        → "ফাংশন" function ;
+function       → IDENTIFIER "(" parameters? ")" block ;
+parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
+
+varDecl        → "ধরি" variable ( "," variable )* ";" ;
+variable       → IDENTIFIER ( "=" expression)? ;
+
+statement      → exprStmt
+               | ifStmt
+               | whileStmt
+               | forStmt
+               | printStmt
+               | block
+               | breakStmt
+               | continueStmt
+               | returnStmt ;
+
+returnStmt     → "ফেরত" expression? ";" ;
+breakStmt      → "থামো" ";" ;
+continueStmt   → "চালিয়ে_যাও" ";" ;
+
+forStmt        → "ফর" "(" ( varDecl | exprStmt | ";" )
+                 expression? ";"
+                 expression? ")" statement ;
+whileStmt      → "যতক্ষণ" "(" expression ")" statement ;
+ifStmt         → "যদি" "(" expression ")" statement
+               ( "নাহয়" statement )? ;
+
+block          → "{" declaration* "}" ;
+exprStmt       → expression ";" ;
+printStmt      → "print" expression ";" ;
+
+expression     → assignment ;
+assignment     → IDENTIFIER "=" assignment
+               | arrayAccess "=" assignment
+               | propertyAccess "=" assignment 
+               | logic_or ;
+
+propertyAccess → primary "." IDENTIFIER ;
+
+logic_or       → logic_and ( ( "বা" | "||" ) logic_and )* ;
+logic_and      → bitwise_or ( ( "এবং" | "&&" ) bitwise_or )* ;
+bitwise_or     → bitwise_xor ( "|" bitwise_xor )* ;
+bitwise_xor    → bitwise_and ( "^" bitwise_and )* ;
+bitwise_and    → equality ( "&" equality )* ;
+equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+comparison     → shift ( ( ">" | ">=" | "<" | "<=" ) shift )* ;
+shift          → term ( ( ">>" | "<<" ) term )* ;
+term           → factor ( ( "-" | "+" ) factor )* ;
+factor         → power ( ( "/" | "*" | "%" ) power )* ;
+power          → unary ( "**" unary )* ;
+unary          → ( "!" | "-" | "~" ) unary
+               | call ;
+
+call           → primary ( "(" arguments? ")" )* 
+               | arrayAccess
+               | propertyAccess ;
+
+arrayAccess    → primary "[" expression "]" ;
+arguments      → expression ( "," expression )* ;
+
+primary        → NUMBER | STRING | "সত্য" | "মিথ্যা" | "nil"
                | "(" expression ")" 
                | IDENTIFIER 
                | arrayLiteral
