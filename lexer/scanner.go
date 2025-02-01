@@ -2,32 +2,35 @@ package lexer
 
 import (
 	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/ah-naf/crafting-interpreter/token"
 	"github.com/ah-naf/crafting-interpreter/utils"
 )
 
 var keywords = map[string]token.TokenType{
-	"and":      token.LOGICAL_AND,
-	"class":    token.CLASS,
-	"else":     token.ELSE,
-	"false":    token.FALSE,
-	"for":      token.FOR,
-	"fun":      token.FUN,
-	"if":       token.IF,
-	"nil":      token.NIL,
-	"or":       token.LOGICAL_OR,
-	"print":    token.PRINT,
-	"return":   token.RETURN,
-	"true":     token.TRUE,
-	"var":      token.VAR,
-	"while":    token.WHILE,
-	"break":    token.BREAK,
-	"continue": token.CONTINUE,
+	"ফাংশন":      token.FUN,
+	"ধরি":        token.VAR,
+	"ফর":         token.FOR,
+	"যদি":        token.IF,
+	"নাহয়":       token.ELSE,
+	"যতক্ষণ":     token.WHILE,
+	"সত্য":       token.TRUE,
+	"মিথ্যা":     token.FALSE,
+	"nil":        token.NIL,
+	"print":      token.PRINT,
+	"ফেরত":       token.RETURN,
+	"থামো":       token.BREAK,
+	"চালিয়ে_যাও": token.CONTINUE,
+
+	// Logical operators in Bangla
+	"এবং": token.LOGICAL_AND,
+	"বা":  token.LOGICAL_OR,
 }
 
 type Scanner struct {
-	source  string
+	source  []rune
 	tokens  []token.Token
 	start   int
 	current int
@@ -35,7 +38,7 @@ type Scanner struct {
 }
 
 // NewScanner creates a new Scanner instance
-func NewScanner(source string) *Scanner {
+func NewScanner(source []rune) *Scanner {
 	return &Scanner{
 		source:  source,
 		tokens:  make([]token.Token, 0),
@@ -170,7 +173,7 @@ func (s *Scanner) identifier() {
 		s.advance()
 	}
 
-	text := s.source[s.start:s.current]
+	text := string(s.source[s.start:s.current])
 	if keyword, ok := keywords[text]; ok {
 		s.addToken(keyword)
 	} else {
@@ -193,7 +196,8 @@ func (s *Scanner) number() {
 		}
 	}
 
-	value, err := strconv.ParseFloat(s.source[s.start:s.current], 64)
+	number_lexeme := convertBanglaDigitsToASCII(string(s.source[s.start:s.current]))
+	value, err := strconv.ParseFloat(number_lexeme, 64)
 	if err != nil {
 		utils.GlobalError(s.line, "Invalid number format")
 		return
@@ -236,7 +240,7 @@ func (s *Scanner) multilineComment() {
 	utils.GlobalError(s.line, "Unterminated multiline comment")
 }
 
-func (s *Scanner) match(expected byte) bool {
+func (s *Scanner) match(expected rune) bool {
 	if s.isAtEnd() {
 		return false
 	}
@@ -247,31 +251,30 @@ func (s *Scanner) match(expected byte) bool {
 	return true
 }
 
-func (s *Scanner) peek() byte {
+func (s *Scanner) peek() rune {
 	if s.isAtEnd() {
 		return 0
 	}
 	return s.source[s.current]
 }
 
-func (s *Scanner) peekNext() byte {
+func (s *Scanner) peekNext() rune {
 	if s.current+1 >= len(s.source) {
 		return 0
 	}
 	return s.source[s.current+1]
 }
 
-func isAlpha(c byte) bool {
-	return (c >= 'a' && c <= 'z') ||
-		(c >= 'A' && c <= 'Z') ||
-		c == '_'
+func isAlpha(r rune) bool {
+	// Accept letters and combining marks (as well as underscore, if you like)
+	return unicode.IsLetter(r) || unicode.IsMark(r) || r == '_'
 }
 
-func isDigit(c byte) bool {
-	return c >= '0' && c <= '9'
+func isDigit(c rune) bool {
+	return (c >= '0' && c <= '9') || (c >= '০' && c <= '৯') // U+09E6 to U+09EF}
 }
 
-func isAlphaNumeric(c byte) bool {
+func isAlphaNumeric(c rune) bool {
 	return isAlpha(c) || isDigit(c)
 }
 
@@ -280,7 +283,7 @@ func (s *Scanner) isAtEnd() bool {
 	return s.current >= len(s.source)
 }
 
-func (s *Scanner) advance() byte {
+func (s *Scanner) advance() rune {
 	b := s.source[s.current]
 	s.current++
 	return b
@@ -292,6 +295,23 @@ func (s *Scanner) addToken(tokenType token.TokenType) {
 }
 
 func (s *Scanner) AddToken(tokenType token.TokenType, literal interface{}) {
-	text := s.source[s.start:s.current]
+	text := string(s.source[s.start:s.current])
 	s.tokens = append(s.tokens, *token.NewToken(tokenType, text, literal, s.line))
+}
+
+func convertBanglaDigitsToASCII(input string) string {
+	replacements := map[rune]rune{
+		'০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
+		'৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9',
+	}
+
+	var result strings.Builder
+	for _, r := range input {
+		if replacement, exists := replacements[r]; exists {
+			result.WriteRune(replacement) // Convert Bangla digit to ASCII
+		} else {
+			result.WriteRune(r) // Keep other characters unchanged
+		}
+	}
+	return result.String()
 }

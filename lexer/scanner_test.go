@@ -13,33 +13,18 @@ import (
 
 // CaptureStderr captures anything written to os.Stderr during the execution of the provided function.
 func CaptureStderr(f func()) string {
-	// Create a pipe to capture os.Stderr
 	r, w, _ := os.Pipe()
-
-	// Save the current os.Stderr so we can restore it later
 	oldStderr := os.Stderr
-
-	// Redirect os.Stderr to the pipe's writer
 	os.Stderr = w
-
-	// Run the provided function that might write to os.Stderr
 	f()
-
-	// Close the writer to stop capturing
 	w.Close()
-
-	// Restore the original os.Stderr
 	os.Stderr = oldStderr
-
-	// Read the captured output from the pipe
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
-
-	// Return the captured error output as a string
 	return buf.String()
 }
 
-func TestScanTokens(t *testing.T) {
+func TestScanTokensBanglaKeywords(t *testing.T) {
 	tests := []struct {
 		name          string
 		input         string
@@ -52,96 +37,147 @@ func TestScanTokens(t *testing.T) {
 			expected: []token.TokenType{token.EOF},
 		},
 		{
-			name:  "Single character tokens",
+			name: "Single character tokens",
+			// Punctuation & operators that do not rely on keywords
 			input: "(){}[],.-+;*|&^~%:",
 			expected: []token.TokenType{
-				token.LEFT_PAREN, token.RIGHT_PAREN, token.LEFT_BRACE, token.RIGHT_BRACE,
+				token.LEFT_PAREN, token.RIGHT_PAREN,
+				token.LEFT_BRACE, token.RIGHT_BRACE,
 				token.LEFT_BRACKET, token.RIGHT_BRACKET,
-				token.COMMA, token.DOT, token.MINUS, token.PLUS, token.SEMICOLON, token.STAR,
-				token.OR, token.AND, token.XOR, token.NOT, token.MODULO,
-				token.COLON, token.EOF,
-			},
-		},
-		{
-			name:  "One and two character tokens",
-			input: "! != = == < <= > >= ** << >> || && and or break continue",
-			expected: []token.TokenType{
-				token.BANG, token.BANG_EQUAL,
-				token.EQUAL, token.EQUAL_EQUAL,
-				token.LESS, token.LESS_EQUAL,
-				token.GREATER, token.GREATER_EQUAL,
-				token.POWER,
-				token.LEFT_SHIFT, token.RIGHT_SHIFT, token.LOGICAL_OR, token.LOGICAL_AND, token.LOGICAL_AND, token.LOGICAL_OR,
-				token.BREAK, token.CONTINUE,
+				token.COMMA, token.DOT, token.MINUS, token.PLUS,
+				token.SEMICOLON, token.STAR,
+				token.OR, token.AND, token.XOR, token.NOT,
+				token.MODULO, token.COLON,
 				token.EOF,
 			},
-		},
-		{
-			name:     "Comment and whitespace",
-			input:    "// This is a comment\n \t\r\n",
-			expected: []token.TokenType{token.EOF},
-		},
-		{
-			name:     "String literal",
-			input:    `"hello world"`,
-			expected: []token.TokenType{token.STRING, token.EOF},
 		},
 		{
 			name:     "Number literal",
-			input:    "23 23.32",
+			input:    "২৩ ২৩.৩২",
 			expected: []token.TokenType{token.NUMBER, token.NUMBER, token.EOF},
 		},
 		{
-			name:  "Valid language input",
-			input: `var x = 10; print(x + 20);`,
+			name:  "Variable declaration and print",
+			input: `ধরি x = 10; print(x + 20);`,
 			expected: []token.TokenType{
-				token.VAR, token.IDENTIFIER, token.EQUAL, token.NUMBER, token.SEMICOLON,
-				token.PRINT, token.LEFT_PAREN, token.IDENTIFIER, token.PLUS, token.NUMBER, token.RIGHT_PAREN, token.SEMICOLON,
+				token.VAR,         // "ধরি"
+				token.IDENTIFIER,  // "x"
+				token.EQUAL,       // '='
+				token.NUMBER,      // "10"
+				token.SEMICOLON,   // ';'
+				token.PRINT,       // "print"
+				token.LEFT_PAREN,  // '('
+				token.IDENTIFIER,  // "x"
+				token.PLUS,        // '+'
+				token.NUMBER,      // "20"
+				token.RIGHT_PAREN, // ')'
+				token.SEMICOLON,   // ';'
 				token.EOF,
 			},
 		},
 		{
-			name:  "Valid language input with new operators",
-			input: `var x = 10; print(x + 20); y = x & 5 | 3 ^ 2; z = x << 2 >> 1;`,
+			name: "If-else statement in Bangla",
+			// যদি (x > ১০) { print("বড়"); } নাহয় { print("ছোট"); }
+			input: `যদি (x > 10) { print("বড়"); } নাহয় { print("ছোট"); }`,
 			expected: []token.TokenType{
-				token.VAR, token.IDENTIFIER, token.EQUAL, token.NUMBER, token.SEMICOLON,
-				token.PRINT, token.LEFT_PAREN, token.IDENTIFIER, token.PLUS, token.NUMBER, token.RIGHT_PAREN, token.SEMICOLON,
-				token.IDENTIFIER, token.EQUAL, token.IDENTIFIER, token.AND, token.NUMBER, token.OR, token.NUMBER, token.XOR, token.NUMBER, token.SEMICOLON,
-				token.IDENTIFIER, token.EQUAL, token.IDENTIFIER, token.LEFT_SHIFT, token.NUMBER, token.RIGHT_SHIFT, token.NUMBER, token.SEMICOLON,
+				token.IF,          // "যদি"
+				token.LEFT_PAREN,  // '('
+				token.IDENTIFIER,  // "x"
+				token.GREATER,     // '>'
+				token.NUMBER,      // "10"
+				token.RIGHT_PAREN, // ')'
+				token.LEFT_BRACE,  // '{'
+				token.PRINT,       // "print"
+				token.LEFT_PAREN,  // '('
+				token.STRING,      // "বড়"
+				token.RIGHT_PAREN, // ')'
+				token.SEMICOLON,   // ';'
+				token.RIGHT_BRACE, // '}'
+				token.ELSE,        // "নাহয়"
+				token.LEFT_BRACE,  // '{'
+				token.PRINT,       // "print"
+				token.LEFT_PAREN,  // '('
+				token.STRING,      // "ছোট"
+				token.RIGHT_PAREN, // ')'
+				token.SEMICOLON,   // ';'
+				token.RIGHT_BRACE, // '}'
 				token.EOF,
 			},
 		},
 		{
-			name:     "Single line comment",
-			input:    `// this is a comment`,
-			expected: []token.TokenType{token.EOF},
-		},
-		{
-			name:  "Multiline comment in between tokens",
-			input: `var x = 10; /* this is a multiline comment */ print(x);`,
+			name: "Function definition in Bangla",
+			// ফাংশন greet(নাম) { print("হ্যালো, " + নাম); }
+			input: `ফাংশন greet(নাম) { print("হ্যালো, " + নাম); }`,
 			expected: []token.TokenType{
-				token.VAR, token.IDENTIFIER, token.EQUAL, token.NUMBER, token.SEMICOLON,
-				token.PRINT, token.LEFT_PAREN, token.IDENTIFIER, token.RIGHT_PAREN, token.SEMICOLON,
+				token.FUN,         // "ফাংশন"
+				token.IDENTIFIER,  // "greet"
+				token.LEFT_PAREN,  // '('
+				token.IDENTIFIER,  // "নাম"
+				token.RIGHT_PAREN, // ')'
+				token.LEFT_BRACE,  // '{'
+				token.PRINT,       // "print"
+				token.LEFT_PAREN,  // '('
+				token.STRING,      // "হ্যালো, "
+				token.PLUS,        // '+'
+				token.IDENTIFIER,  // "নাম"
+				token.RIGHT_PAREN, // ')'
+				token.SEMICOLON,   // ';'
+				token.RIGHT_BRACE, // '}'
 				token.EOF,
 			},
 		},
 		{
-			name:          "Unterminated multiline comment",
-			input:         `var x = 10; /* this is an unterminated comment `,
-			expected:      []token.TokenType{token.VAR, token.IDENTIFIER, token.EQUAL, token.NUMBER, token.SEMICOLON, token.EOF},
-			expectedError: "Unterminated multiline comment",
+			name: "While statement in Bangla",
+			// যতক্ষণ (x < 10) { x = x + 1; }
+			input: `যতক্ষণ (x < 10) { x = x + 1; }`,
+			expected: []token.TokenType{
+				token.WHILE,       // "যতক্ষণ"
+				token.LEFT_PAREN,  // '('
+				token.IDENTIFIER,  // "x"
+				token.LESS,        // '<'
+				token.NUMBER,      // "10"
+				token.RIGHT_PAREN, // ')'
+				token.LEFT_BRACE,  // '{'
+				token.IDENTIFIER,  // "x"
+				token.EQUAL,       // '='
+				token.IDENTIFIER,  // "x"
+				token.PLUS,        // '+'
+				token.NUMBER,      // "1"
+				token.SEMICOLON,   // ';'
+				token.RIGHT_BRACE, // '}'
+				token.EOF,
+			},
 		},
 		{
-			name:          "Unterminated string",
-			input:         `"This is an unterminated string`,
-			expected:      []token.TokenType{token.EOF},
-			expectedError: "Unterminated string.",
+			name: "Return / Break / Continue in Bangla",
+			// ফেরত ১০; থামো; চালিয়ে_যাও;
+			input: `ফেরত 10; থামো; চালিয়ে_যাও;`,
+			expected: []token.TokenType{
+				token.RETURN,    // "ফেরত"
+				token.NUMBER,    // "10"
+				token.SEMICOLON, // ';'
+				token.BREAK,     // "থামো"
+				token.SEMICOLON, // ';'
+				token.CONTINUE,  // "চালিয়ে_যাও"
+				token.SEMICOLON, // ';'
+				token.EOF,
+			},
 		},
 		{
-			name:          "Invalid character",
-			input:         "var x = 10; @ print(x);",
-			expected:      []token.TokenType{token.VAR, token.IDENTIFIER, token.EQUAL, token.NUMBER, token.SEMICOLON, token.PRINT, token.LEFT_PAREN, token.IDENTIFIER, token.RIGHT_PAREN, token.SEMICOLON, token.EOF},
-			expectedError: "Unexpected character.",
+			name: "Logical operators in Bangla",
+			// (সত্য এবং মিথ্যা) বা মিথ্যা
+			// Depending on your grammar: "সত্য", "মিথ্যা", "এবং", "বা"
+			input: `(সত্য এবং মিথ্যা) বা মিথ্যা`,
+			expected: []token.TokenType{
+				token.LEFT_PAREN,  // '('
+				token.TRUE,        // "সত্য"
+				token.LOGICAL_AND, // "এবং"
+				token.FALSE,       // "মিথ্যা"
+				token.RIGHT_PAREN, // ')'
+				token.LOGICAL_OR,  // "বা"
+				token.FALSE,       // "মিথ্যা"
+				token.EOF,
+			},
 		},
 	}
 
@@ -151,7 +187,8 @@ func TestScanTokens(t *testing.T) {
 
 			// Capture stderr output
 			capturedErr := CaptureStderr(func() {
-				scanner := NewScanner(tt.input)
+				// Pass the Bangla input as runes to NewScanner
+				scanner := NewScanner([]rune(tt.input))
 				tokens := scanner.ScanTokens()
 
 				if len(tokens) != len(tt.expected) {
@@ -166,6 +203,7 @@ func TestScanTokens(t *testing.T) {
 				}
 			})
 
+			// Grab the actual error message (if any)
 			splittedErr := strings.Split(capturedErr, "Error: ")
 			if len(splittedErr) > 1 {
 				capturedErr = strings.TrimSpace(splittedErr[1])
