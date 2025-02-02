@@ -26,6 +26,7 @@ var reservedIdentifiers = map[string]bool{
 	"max":    true,
 	"round":  true,
 	"input":  true,
+	"ইনপুট":  true,
 }
 
 type ParseError struct {
@@ -723,7 +724,6 @@ func (p *Parser) call() (ast.Expr, error) {
 			break // No more call expressions to parse.
 		}
 	}
-
 	return expr, nil
 }
 

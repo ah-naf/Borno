@@ -9,6 +9,7 @@ import (
 	"github.com/ah-naf/crafting-interpreter/environment"
 	"github.com/ah-naf/crafting-interpreter/token"
 	"github.com/ah-naf/crafting-interpreter/utils"
+	"golang.org/x/text/unicode/norm"
 )
 
 // Interpreter struct represents the execution context for evaluating expressions and statements.
@@ -45,7 +46,7 @@ func NewInterpreter() *Interpreter {
 	globals.Define("max", NativeMaxFn{})
 	globals.Define("round", NativeRoundFn{})
 
-	globals.Define("input", NativeInputFn{})
+	globals.Define("ইনপুট", NativeInputFn{})
 
 	// Then, create the Interpreter instance with the global environment
 	i := &Interpreter{
@@ -250,6 +251,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 
 	case *ast.Call:
 		// Step 1: Evaluate the callee (the thing being called)
+
 		callee, signal := i.eval(e.Callee, env, isRepl)
 
 		if signal.Type != ControlFlowNone {
@@ -297,9 +299,10 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		}
 
 		if val, ok := value.([]rune); ok {
-			fmt.Println(string(val))
+			s := string(val)
+			fmt.Println(norm.NFC.String(s))
 		} else {
-			fmt.Println(stringify(value))
+			fmt.Println(norm.NFC.String(stringify(value)))
 		}
 
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}

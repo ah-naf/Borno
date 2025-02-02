@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ah-naf/crafting-interpreter/token"
+	"golang.org/x/text/unicode/norm"
 )
 
 // Expr is the base interface for all expression types.
@@ -45,9 +46,9 @@ func (l *Literal) String() string {
 	}
 	
 	if runes, ok := l.Value.([]rune); ok {
-        return string(runes)
+        return norm.NFC.String(string(runes))
     }
-    return fmt.Sprintf("%v", l.Value)
+    return norm.NFC.String(fmt.Sprintf("%v", l.Value))
 }
 
 // Unary represents a unary expression.
