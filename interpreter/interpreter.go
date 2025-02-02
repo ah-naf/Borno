@@ -3,6 +3,7 @@ package interpreter
 import (
 	"fmt"
 	"math"
+	"strconv"
 
 	"github.com/ah-naf/crafting-interpreter/ast"
 	"github.com/ah-naf/crafting-interpreter/environment"
@@ -294,7 +295,13 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		if utils.HadRuntimeError {
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0} // Stop execution if a runtime error occurred during evaluation
 		}
-		fmt.Println(stringify(value))
+
+		if val, ok := value.([]rune); ok {
+			fmt.Println(string(val))
+		} else {
+			fmt.Println(stringify(value))
+		}
+
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.ExpressionStatement:
@@ -304,7 +311,11 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			return nil, signal
 		}
 		if isRepl && !utils.HadRuntimeError {
-			fmt.Println(stringify(value))
+			if val, ok := value.([]rune); ok {
+				fmt.Println(string(val))
+			} else {
+				fmt.Println(stringify(value))
+			}
 		}
 		return value, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
@@ -619,6 +630,9 @@ func handleAddition(left, right interface{}, operator token.Token) interface{} {
 		if ok {
 			return fmt.Sprintf("%v", leftNum) + rightStr
 		}
+		if rightStr, ok := right.([]rune); ok {
+			return fmt.Sprintf("%v", leftNum) + string(rightStr)
+		}
 	case string:
 		rightStr, err := stringifyOperand(right)
 		if err != nil {
@@ -626,6 +640,27 @@ func handleAddition(left, right interface{}, operator token.Token) interface{} {
 			return nil
 		}
 		return l + rightStr
+	case []rune:
+		var rightStr string
+		// Check the type of the right operand:
+		switch r := right.(type) {
+		case []rune:
+			// Both operands are []rune; convert them to strings.
+			rightStr = string(r)
+		case string:
+			rightStr = r
+		default:
+			// If the right operand isn’t directly a string or []rune,
+			// attempt to stringify it using your helper.
+			var err error
+			rightStr, err = stringifyOperand(right)
+			if err != nil {
+				utils.RuntimeError(operator, "Right operand must be a string or number.")
+				return nil
+			}
+		}
+		// Convert leftVal (a []rune) to a string and add.
+		return string(l) + rightStr
 	}
 	utils.RuntimeError(operator, "Operands must be numbers or strings.")
 	return nil
@@ -728,6 +763,13 @@ func toNumber(value interface{}) (float64, error) {
 		return float64(v), nil
 	case float64:
 		return v, nil
+	case string:
+		ascii := utils.ConvertBanglaDigitsToASCII(v)
+		num, err := strconv.ParseFloat(ascii, 64)
+		if err != nil {
+			return 0, fmt.Errorf("expected a number, got string %q", v)
+		}
+		return num, nil
 	default:
 		return 0, fmt.Errorf("expected a number, got %T", value)
 	}
@@ -742,6 +784,16 @@ func toInt64(value interface{}) (int64, error) {
 			return int64(v), nil
 		}
 		return 0, fmt.Errorf("expected an integer, got float %v", v)
+	case string:
+		ascii := utils.ConvertBanglaDigitsToASCII(v)
+		num, err := strconv.ParseFloat(ascii, 64)
+		if err != nil {
+			return 0, fmt.Errorf("expected an integer, got string %q", v)
+		}
+		if float64(int64(num)) == num {
+			return int64(num), nil
+		}
+		return 0, fmt.Errorf("expected an integer, got float %v", num)
 	default:
 		return 0, fmt.Errorf("expected an integer, got %T", value)
 	}
@@ -751,6 +803,8 @@ func stringifyOperand(value interface{}) (string, error) {
 	switch v := value.(type) {
 	case int64, float64, string:
 		return fmt.Sprintf("%v", v), nil
+	case []rune:
+		return fmt.Sprintf("%v", string(v)), nil
 	default:
 		return "", fmt.Errorf("cannot stringify value of type %T", value)
 	}
@@ -812,6 +866,9 @@ func getLineNumber(expr ast.Expr) int {
 func stringify(value interface{}) string {
 	if value == nil {
 		return "nil"
+	}
+	if valRune, ok := value.([]rune); ok {
+		return string(valRune)
 	}
 	return fmt.Sprintf("%v", value)
 }

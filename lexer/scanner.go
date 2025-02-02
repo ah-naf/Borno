@@ -2,7 +2,6 @@ package lexer
 
 import (
 	"strconv"
-	"strings"
 	"unicode"
 
 	"github.com/ah-naf/crafting-interpreter/token"
@@ -196,7 +195,7 @@ func (s *Scanner) number() {
 		}
 	}
 
-	number_lexeme := convertBanglaDigitsToASCII(string(s.source[s.start:s.current]))
+	number_lexeme := utils.ConvertBanglaDigitsToASCII(string(s.source[s.start:s.current]))
 	value, err := strconv.ParseFloat(number_lexeme, 64)
 	if err != nil {
 		utils.GlobalError(s.line, "Invalid number format")
@@ -297,21 +296,4 @@ func (s *Scanner) addToken(tokenType token.TokenType) {
 func (s *Scanner) AddToken(tokenType token.TokenType, literal interface{}) {
 	text := string(s.source[s.start:s.current])
 	s.tokens = append(s.tokens, *token.NewToken(tokenType, text, literal, s.line))
-}
-
-func convertBanglaDigitsToASCII(input string) string {
-	replacements := map[rune]rune{
-		'০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
-		'৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9',
-	}
-
-	var result strings.Builder
-	for _, r := range input {
-		if replacement, exists := replacements[r]; exists {
-			result.WriteRune(replacement) // Convert Bangla digit to ASCII
-		} else {
-			result.WriteRune(r) // Keep other characters unchanged
-		}
-	}
-	return result.String()
 }

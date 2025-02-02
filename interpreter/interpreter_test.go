@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -53,6 +54,10 @@ func toFloat(val interface{}) interface{} {
 		return float64(v)
 	case float64:
 		return v
+	case string:
+		ascii := utils.ConvertBanglaDigitsToASCII(v)
+		num, _ := strconv.ParseFloat(ascii, 64)
+		return num
 	default:
 		return val
 	}
@@ -94,8 +99,8 @@ func TestEvalExpression(t *testing.T) {
 		{"Not equal false", "4 != 4;", false, ""},
 		{"Grouping and precedence", "(1 + 2) * 3;", 9.0, ""},
 		{"Unary minus", "-5;", -5.0, ""},
-		{"Unary bang true", "!true;", false, ""},
-		{"Unary bang false", "!false;", true, ""},
+		{"Unary bang true", "!সত্য;", false, ""},
+		{"Unary bang false", "!মিথ্যা;", true, ""},
 		{"Unary bang number", "!0;", true, ""},
 		{"Nil equality", "nil == nil;", true, ""},
 		{"Addition of strings", "\"foo\" + \"bar\";", "foobar", ""},
@@ -110,8 +115,8 @@ func TestEvalExpression(t *testing.T) {
 		{"Nested grouping", "((1 + 2) * 3) + (4 * (5 - 2));", 21.0, ""},
 
 		// // // Boolean expressions
-		{"Boolean comparison", "true == false;", false, ""},
-		{"Boolean and number comparison", "true == 1;", false, ""},
+		{"Boolean comparison", "সত্য == মিথ্যা;", false, ""},
+		{"Boolean and number comparison", "সত্য == 1;", false, ""},
 
 		// // // Nil-related expressions
 		// {"Nil equality", "nil == nil;", true, ""},
@@ -137,8 +142,8 @@ func TestEvalExpression(t *testing.T) {
 		{"Number + string + number", "123 + \" + \" + 456;", "123 + 456", ""},
 
 		// // Invalid operations
-		{"Invalid addition of string and boolean", "\"foo\" + true;", nil, "Right operand must be a string or number."},
-		{"Invalid addition of boolean and string", "true + \"foo\";", nil, "Operands must be numbers or strings."},
+		{"Invalid addition of string and boolean", "\"foo\" + সত্য;", nil, "Right operand must be a string or number."},
+		{"Invalid addition of boolean and string", "সত্য + \"foo\";", nil, "Operands must be numbers or strings."},
 		{"Invalid addition of string and nil", "\"foo\" + nil;", nil, "Right operand must be a string or number."},
 		{"Invalid addition of number and nil", "42 + nil;", nil, "Operands must be numbers or strings."},
 	}
@@ -154,7 +159,7 @@ func TestEvalExpression(t *testing.T) {
 			// Capture stderr during evaluation
 			capturedErr := CaptureStderr(func() {
 				// Lexical analysis
-				scanner := lexer.NewScanner(tt.input)
+				scanner := lexer.NewScanner([]rune(tt.input))
 				tokens := scanner.ScanTokens()
 
 				// Check for lexical errors
@@ -211,13 +216,13 @@ func TestEvalUnary(t *testing.T) {
 		errorMsg string
 	}{
 		{"Negate Number", token.MINUS, 5.0, -5.0, ""},
-		{"Negate Non-Number", token.MINUS, "hello", nil, "expected a number, got string"},
+		{"Negate Non-Number", token.MINUS, "hello", nil, `expected a number, got string "hello"`},
 		{"Logical Not True", token.BANG, true, false, ""},
 		{"Logical Not False", token.BANG, false, true, ""},
 		{"Logical Not Nil", token.BANG, nil, true, ""},
 		{"Logical Not Number", token.BANG, 42.0, false, ""},
 		{"NOT operator", token.NOT, int64(1), -2, ""},
-		{"NOT operator on string", token.NOT, "hello", nil, "expected an integer, got string"},
+		{"NOT operator on string", token.NOT, "hello", nil, `expected an integer, got string "hello"`},
 	}
 
 	for _, tt := range tests {

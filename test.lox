@@ -1,1 +1,2 @@
-print "hello";
+ধরি এ = ৩;
+print 3 + "এ";

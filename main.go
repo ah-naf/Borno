@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ah-naf/crafting-interpreter/interpreter"
 	"github.com/ah-naf/crafting-interpreter/lexer"
 	"github.com/ah-naf/crafting-interpreter/parser"
 	"github.com/ah-naf/crafting-interpreter/utils"
@@ -62,17 +63,16 @@ func run(source string, isRepl bool) {
 
 	Parser := parser.NewParser(tokens)
 	expr, _ := Parser.Parse()
-	
+
 	if utils.HadError {
 		return
 	}
-	fmt.Println(expr)
 
-	// interpreter := interpreter.NewInterpreter()
-	// interpreter.Interpret(expr, isRepl)
-	// if utils.HadRuntimeError {
-	// 	return
-	// }
+	interpreter := interpreter.NewInterpreter()
+	interpreter.Interpret(expr, isRepl)
+	if utils.HadRuntimeError {
+		return
+	}
 
 	// for _, stmt := range expr {
 	// 	// prettyPrint(stmt) // Use %#v to print all the nested fields and structs
