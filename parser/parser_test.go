@@ -14,7 +14,8 @@ import (
 // Helper function to scan and parse an input expression
 func scanAndParse(input string) ([]ast.Stmt, error) {
 	// Scan tokens from input using the lexer
-	scanner := lexer.NewScanner(input)
+	inputRune := []rune(input)
+	scanner := lexer.NewScanner(inputRune)
 	tokens := scanner.ScanTokens()
 
 	// Parse the tokens using the parser
@@ -27,31 +28,19 @@ func scanAndParse(input string) ([]ast.Stmt, error) {
 func CaptureStderr(f func()) string {
 	// Create a pipe to capture os.Stderr
 	r, w, _ := os.Pipe()
-
-	// Save the current os.Stderr so we can restore it later
 	oldStderr := os.Stderr
-
-	// Redirect os.Stderr to the pipe's writer
 	os.Stderr = w
 
-	// Run the provided function that might write to os.Stderr
 	f()
 
-	// Close the writer to stop capturing
 	w.Close()
-
-	// Restore the original os.Stderr
 	os.Stderr = oldStderr
 
-	// Read the captured output from the pipe
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
-
-	// Return the captured error output as a string
 	return buf.String()
 }
 
-// Test cases according to the grammar rules
 func TestParseGrammar(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -133,7 +122,7 @@ func TestParseGrammar(t *testing.T) {
 		},
 		{
 			name:      "Complex with comparison",
-			input:     "(1 + 2) > (3 * 4) == true;",
+			input:     "(1 + 2) > (3 * 4) == সত্য;",
 			expected:  "(((group (1 + 2)) > (group (3 * 4))) == true)",
 			expectErr: false,
 		},
@@ -163,13 +152,13 @@ func TestParseGrammar(t *testing.T) {
 		},
 		{
 			name:      "Variable Declaration",
-			input:     "var a = 10;",
+			input:     "ধরি a = 10;",
 			expected:  "var a = 10",
 			expectErr: false,
 		},
 		{
 			name:      "Multiple Variable Declaration",
-			input:     "var a = 10, b = 20;",
+			input:     "ধরি a = 10, b = 20;",
 			expected:  "var a = 10\nvar b = 20\n",
 			expectErr: false,
 		},
@@ -181,31 +170,31 @@ func TestParseGrammar(t *testing.T) {
 		},
 		{
 			name:      "Invalid Variable Declaration",
-			input:     "var = 10;",
+			input:     "ধরি = 10;",
 			expected:  "",
 			expectErr: true,
 		},
 		{
 			name:      "Assignment Chaining",
-			input:     "var a = b = c = 2;",
+			input:     "ধরি a = b = c = 2;",
 			expected:  "var a = (b = (c = 2))",
 			expectErr: false,
 		},
 		{
 			name:      "Simple If Statement",
-			input:     "if (true) { print 1; }",
+			input:     "যদি (সত্য) { print 1; }",
 			expected:  "if (true){\n(print 1)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "If-Else Statement",
-			input:     "if (false) { print 1; } else { print 2; }",
+			input:     "যদি (মিথ্যা) { print 1; } নাহয় { print 2; }",
 			expected:  "if (false){\n(print 1)\n}else {\n(print 2)\n}",
 			expectErr: false,
 		},
 		{
 			name:  "Nested If-Else",
-			input: "if (a > b) { if (a > c) { print a; } else { print c; } }",
+			input: "যদি (a > b) { যদি (a > c) { print a; } নাহয় { print c; } }",
 			expected: `if ((a > b)){
 if ((a > c)){
 (print a)
@@ -217,13 +206,13 @@ if ((a > c)){
 		},
 		{
 			name:      "Invalid If Statement",
-			input:     "if true { print 1; }",
+			input:     "যদি সত্য { print 1; }",
 			expected:  "",
 			expectErr: true,
 		},
 		{
 			name:  "valid if statement with && condition",
-			input: "if(a > b && a >c ) {print c;} else {print a;}",
+			input: "যদি(a > b && a > c ) {print c;} নাহয় {print a;}",
 			expected: `if (((a > b) && (a > c))){
 (print c)
 }else {
@@ -233,73 +222,73 @@ if ((a > c)){
 		},
 		{
 			name:      "Logical AND condition",
-			input:     "if (a > b && b > c) { print a; }",
+			input:     "যদি (a > b && b > c) { print a; }",
 			expected:  "if (((a > b) && (b > c))){\n(print a)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Logical OR condition",
-			input:     "if (a > b || b > c) { print b; }",
+			input:     "যদি (a > b || b > c) { print b; }",
 			expected:  "if (((a > b) || (b > c))){\n(print b)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Logical AND with Logical OR",
-			input:     "if (a > b && b > c || c > d) { print b; }",
+			input:     "যদি (a > b && b > c || c > d) { print b; }",
 			expected:  "if ((((a > b) && (b > c)) || (c > d))){\n(print b)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Nested Logical AND/OR",
-			input:     "if ((a > b && b > c) || (c > d && d > e)) { print a; }",
+			input:     "যদি ((a > b && b > c) || (c > d && d > e)) { print a; }",
 			expected:  "if (((group ((a > b) && (b > c))) || (group ((c > d) && (d > e))))){\n(print a)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Logical OR and comparison",
-			input:     "if (a < b || b == c) { print b; }",
+			input:     "যদি (a < b || b == c) { print b; }",
 			expected:  "if (((a < b) || (b == c))){\n(print b)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Logical AND with comparison and arithmetic",
-			input:     "if (a + b > c && b - c < d) { print a; }",
+			input:     "যদি (a + b > c && b - c < d) { print a; }",
 			expected:  "if ((((a + b) > c) && ((b - c) < d))){\n(print a)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Logical AND with nested parentheses",
-			input:     "if ((a && b) && (c || d)) { print true; }",
+			input:     "যদি ((a && b) && (c || d)) { print সত্য; }",
 			expected:  "if (((group (a && b)) && (group (c || d)))){\n(print true)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Invalid Logical AND without parentheses",
-			input:     "if a && b { print true; }",
+			input:     "যদি a && b { print সত্য; }",
 			expected:  "",
 			expectErr: true,
 		},
 		{
 			name:      "Invalid Logical OR without parentheses",
-			input:     "if a || b { print false; }",
+			input:     "যদি a || b { print মিথ্যা; }",
 			expected:  "",
 			expectErr: true,
 		},
 		{
 			name:      "Simple While Statement",
-			input:     "while (true) { print 1; }",
+			input:     "যতক্ষণ (সত্য) { print 1; }",
 			expected:  "while (true){\n(print 1)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "While Statement with Condition",
-			input:     "while (x < 5) { x = x + 1; }",
+			input:     "যতক্ষণ (x < 5) { x = x + 1; }",
 			expected:  "while ((x < 5)){\n(x = (x + 1))\n}",
 			expectErr: false,
 		},
 		{
 			name:  "While Statement with Complex Body",
-			input: "while (x > 0) { if (x == 1) { print x; } else { print -x; } }",
+			input: "যতক্ষণ (x > 0) { যদি (x == 1) { print x; } নাহয় { print -x; } }",
 			expected: `while ((x > 0)){
 if ((x == 1)){
 (print x)
@@ -311,12 +300,12 @@ if ((x == 1)){
 		},
 		{
 			name: "For loop",
-			input: `for(var a = 0; a < 5; a = a + 1) {
-				if(a == 2) {
-					continue;
-				}
-				print a;
-			}`,
+			input: `ফর(ধরি a = 0; a < 5; a = a + 1) {
+						যদি(a == 2) {
+							চালিয়ে_যাও;
+						}
+						print a;
+					}`,
 			expected: `for (var a = 0; (a < 5); (a = (a + 1))) {
 if ((a == 2)){
 continue
@@ -327,7 +316,7 @@ continue
 		},
 		{
 			name:  "Simple For Loop",
-			input: `for (var i = 0; i < 10; i = i + 1) { print i; }`,
+			input: `ফর (ধরি i = 0; i < 10; i = i + 1) { print i; }`,
 			expected: `for (var i = 0; (i < 10); (i = (i + 1))) {
 (print i)
 }`,
@@ -335,7 +324,7 @@ continue
 		},
 		{
 			name:  "For Loop Without Initializer",
-			input: `for (; i < 10; i = i + 1) { print i; }`,
+			input: `ফর (; i < 10; i = i + 1) { print i; }`,
 			expected: `for (; (i < 10); (i = (i + 1))) {
 (print i)
 }`,
@@ -343,7 +332,7 @@ continue
 		},
 		{
 			name:  "For Loop Without Condition",
-			input: `for (var i = 0;; i = i + 1) { print i; }`,
+			input: `ফর (ধরি i = 0;; i = i + 1) { print i; }`,
 			expected: `for (var i = 0; true; (i = (i + 1))) {
 (print i)
 }`,
@@ -351,7 +340,7 @@ continue
 		},
 		{
 			name:  "For Loop Without Increment",
-			input: `for (var i = 0; i < 10;) { print i; i = i + 1; }`,
+			input: `ফর (ধরি i = 0; i < 10;) { print i; i = i + 1; }`,
 			expected: `for (var i = 0; (i < 10); ) {
 (print i)
 (i = (i + 1))
@@ -360,7 +349,7 @@ continue
 		},
 		{
 			name:  "For Loop Without All Clauses",
-			input: `for (;;) { print "infinite"; }`,
+			input: `ফর (;;) { print "infinite"; }`,
 			expected: `for (; true; ) {
 (print infinite)
 }`,
@@ -368,13 +357,13 @@ continue
 		},
 		{
 			name:      "Invalid For Loop",
-			input:     `for var i = 0; i < 10; i = i + 1 { print i; }`,
+			input:     `ফর ধরি i = 0; i < 10; i = i + 1 { print i; }`,
 			expected:  "",
 			expectErr: true,
 		},
 		{
 			name: "Basic Function",
-			input: `fun add(a, b) {
+			input: `ফাংশন add(a, b) {
 print a + b;
 }`,
 			expected: `fun add(a, b) {
@@ -396,15 +385,14 @@ print a + b;
 		},
 		{
 			name: "Simple Function Declaration",
-			input: `fun sayHello() {
-	print "Hello!";
+			input: `ফাংশন sayHello() {
+print "Hello!";
 }`,
 			expected: `fun sayHello() {
 (print Hello!)
 }`,
 			expectErr: false,
 		},
-
 		{
 			name:      "Function Call Without Arguments",
 			input:     `sayHello();`,
@@ -431,19 +419,19 @@ print a + b;
 		},
 		{
 			name:      "Return statemetn",
-			input:     "return a;",
+			input:     "ফেরত a;",
 			expected:  "return a",
 			expectErr: false,
 		},
 		{
 			name:      "Array Literal",
-			input:     "var arr = [1, 2, 3];",
+			input:     "ধরি arr = [1, 2, 3];",
 			expected:  "var arr = [1, 2, 3]",
 			expectErr: false,
 		},
 		{
 			name:      "Empty Array Literal",
-			input:     "var arr = [];",
+			input:     "ধরি arr = [];",
 			expected:  "var arr = []",
 			expectErr: false,
 		},
@@ -473,7 +461,7 @@ print a + b;
 		},
 		{
 			name:      "Invalid Array Literal",
-			input:     "var arr = [1, 2, ;",
+			input:     "ধরি arr = [1, 2, ;",
 			expected:  "",
 			expectErr: true,
 		},
@@ -491,19 +479,19 @@ print a + b;
 		},
 		{
 			name:      "Object Literal",
-			input:     `var obj = {name: "Alice", age: 30, height: 5.9};`,
+			input:     `ধরি obj = {name: "Alice", age: 30, height: 5.9};`,
 			expected:  `var obj = {name: Alice, age: 30, height: 5.9}`,
 			expectErr: false,
 		},
 		{
 			name:      "Object with Numeric Keys",
-			input:     `var obj = {1: "one", 2: "two"};`,
+			input:     `ধরি obj = {1: "one", 2: "two"};`,
 			expected:  ``,
 			expectErr: true,
 		},
 		{
 			name:      "Empty Object Literal",
-			input:     `var obj = {};`,
+			input:     `ধরি obj = {};`,
 			expected:  `var obj = {}`,
 			expectErr: false,
 		},
@@ -550,16 +538,15 @@ print a + b;
 			expectErr: false,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			output := ""
 			captured := CaptureStderr(func() {
 				expr, err := scanAndParse(tt.input)
-
 				if err != nil {
 					os.Stderr.Write([]byte(err.Error() + "\n"))
 				}
-
 				if len(expr) == 0 {
 					return
 				}
@@ -569,15 +556,12 @@ print a + b;
 			if tt.expectErr && captured == "" {
 				t.Fatalf("Expected an error but got none for input: %s", tt.input)
 			}
-
 			if !tt.expectErr && captured != "" {
 				t.Fatalf("Did not expect an error but got one for input: %s, error: %v", tt.input, captured)
 			}
-
 			if output != tt.expected {
 				t.Fatalf("Expected %s, but got %s", tt.expected, output)
 			}
-
 		})
 	}
 }

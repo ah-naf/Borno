@@ -43,7 +43,11 @@ func (l *Literal) String() string {
 	if l.Value == nil {
 		return "nil"
 	}
-	return fmt.Sprintf("%v", l.Value)
+	
+	if runes, ok := l.Value.([]rune); ok {
+        return string(runes)
+    }
+    return fmt.Sprintf("%v", l.Value)
 }
 
 // Unary represents a unary expression.

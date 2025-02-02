@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/ah-naf/crafting-interpreter/lexer"
+	"github.com/ah-naf/crafting-interpreter/parser"
 	"github.com/ah-naf/crafting-interpreter/utils"
 )
 
@@ -57,13 +58,15 @@ func run(source string, isRepl bool) {
 	runeSource := []rune(source)
 	scanner := lexer.NewScanner(runeSource)
 	tokens := scanner.ScanTokens()
-	fmt.Println(tokens)
-	// Parser := parser.NewParser(tokens)
-	// expr, _ := Parser.Parse()
+	// fmt.Printf("%#v\n", tokens)
 
-	// if utils.HadError {
-	// 	return
-	// }
+	Parser := parser.NewParser(tokens)
+	expr, _ := Parser.Parse()
+	
+	if utils.HadError {
+		return
+	}
+	fmt.Println(expr)
 
 	// interpreter := interpreter.NewInterpreter()
 	// interpreter.Interpret(expr, isRepl)

@@ -888,7 +888,6 @@ func (p *Parser) consume(tokenType token.TokenType, message string) (token.Token
 	if p.check(tokenType) {
 		return p.advance(), nil
 	}
-
 	return token.Token{}, p.error(p.peek(), message)
 }
 
