@@ -1,4 +1,4 @@
-module github.com/ah-naf/crafting-interpreter
+module github.com/ah-naf/borno
 
 go 1.22.6
 

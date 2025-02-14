@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ah-naf/crafting-interpreter/ast"
-	"github.com/ah-naf/crafting-interpreter/lexer"
-	"github.com/ah-naf/crafting-interpreter/parser"
+	"github.com/ah-naf/borno/ast"
+	"github.com/ah-naf/borno/lexer"
+	"github.com/ah-naf/borno/parser"
 )
 
 // Helper function to scan and parse an input expression

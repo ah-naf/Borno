@@ -3,8 +3,8 @@ package environment
 import (
 	"fmt"
 
-	"github.com/ah-naf/crafting-interpreter/token"
-	"github.com/ah-naf/crafting-interpreter/utils"
+	"github.com/ah-naf/borno/token"
+	"github.com/ah-naf/borno/utils"
 )
 
 type Environment struct {

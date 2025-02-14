@@ -3,9 +3,9 @@ package parser
 import (
 	"fmt"
 
-	"github.com/ah-naf/crafting-interpreter/ast"
-	"github.com/ah-naf/crafting-interpreter/token"
-	"github.com/ah-naf/crafting-interpreter/utils"
+	"github.com/ah-naf/borno/ast"
+	"github.com/ah-naf/borno/token"
+	"github.com/ah-naf/borno/utils"
 )
 
 var reservedIdentifiers = map[string]bool{

@@ -1,0 +1,24 @@
+ফাংশন createCounter() {
+    ধরি count = 0;
+    
+    ফাংশন increment() {
+        count = count + 1;
+        দেখাও "Current count: " + count;
+    }
+    
+    // Return the inner function
+    ফেরত increment;
+}
+
+// Create a counter instance
+ধরি counter1 = createCounter();
+
+// Each call to counter1() increases the count
+counter1(); // Prints "Current count: 1"
+counter1(); // Prints "Current count: 2"
+counter1(); // Prints "Current count: 3"
+
+// Create another counter if you want a separate "count"
+ধরি counter2 = createCounter();
+counter2(); // Prints "Current count: 1"
+counter2(); // Prints "Current count: 2"

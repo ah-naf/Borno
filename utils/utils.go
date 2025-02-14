@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ah-naf/crafting-interpreter/token"
+	"github.com/ah-naf/borno/token"
 )
 
 var HadError bool = false

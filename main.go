@@ -5,19 +5,30 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
-	"github.com/ah-naf/crafting-interpreter/interpreter"
-	"github.com/ah-naf/crafting-interpreter/lexer"
-	"github.com/ah-naf/crafting-interpreter/parser"
-	"github.com/ah-naf/crafting-interpreter/utils"
+	"github.com/ah-naf/borno/interpreter"
+	"github.com/ah-naf/borno/lexer"
+	"github.com/ah-naf/borno/parser"
+	"github.com/ah-naf/borno/utils"
 )
 
 func main() {
 	if len(os.Args) > 2 {
-		fmt.Println("Usage: jlox [script]")
+		fmt.Println("Usage: borno [script]")
 		os.Exit(64)
 	} else if len(os.Args) == 2 {
-		runFile(os.Args[1])
+		scriptFile := os.Args[1]
+
+		// Extract the file extension.
+		ext := filepath.Ext(scriptFile) // e.g. ".bn" or ".borno"
+
+		if ext != ".bn" {
+			fmt.Println("Invalid file extension. Please use `.bn` for Borno scripts.")
+			os.Exit(64)
+		}
+
+		runFile(scriptFile)
 	} else {
 		runPrompt()
 	}

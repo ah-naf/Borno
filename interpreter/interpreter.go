@@ -5,10 +5,10 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/ah-naf/crafting-interpreter/ast"
-	"github.com/ah-naf/crafting-interpreter/environment"
-	"github.com/ah-naf/crafting-interpreter/token"
-	"github.com/ah-naf/crafting-interpreter/utils"
+	"github.com/ah-naf/borno/ast"
+	"github.com/ah-naf/borno/environment"
+	"github.com/ah-naf/borno/token"
+	"github.com/ah-naf/borno/utils"
 	"golang.org/x/text/unicode/norm"
 )
 

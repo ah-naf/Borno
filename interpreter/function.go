@@ -1,8 +1,8 @@
 package interpreter
 
 import (
-	"github.com/ah-naf/crafting-interpreter/ast"
-	"github.com/ah-naf/crafting-interpreter/environment"
+	"github.com/ah-naf/borno/ast"
+	"github.com/ah-naf/borno/environment"
 )
 
 type Callable interface {
