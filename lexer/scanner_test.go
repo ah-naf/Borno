@@ -58,7 +58,7 @@ func TestScanTokensBanglaKeywords(t *testing.T) {
 		},
 		{
 			name:  "Variable declaration and print",
-			input: `ধরি x = 10; print(x + 20);`,
+			input: `ধরি x = 10; দেখাও(x + 20);`,
 			expected: []token.TokenType{
 				token.VAR,         // "ধরি"
 				token.IDENTIFIER,  // "x"
@@ -78,7 +78,7 @@ func TestScanTokensBanglaKeywords(t *testing.T) {
 		{
 			name: "If-else statement in Bangla",
 			// যদি (x > ১০) { print("বড়"); } নাহয় { print("ছোট"); }
-			input: `যদি (x > 10) { print("বড়"); } নাহয় { print("ছোট"); }`,
+			input: `যদি (x > 10) { দেখাও("বড়"); } নাহয় { দেখাও("ছোট"); }`,
 			expected: []token.TokenType{
 				token.IF,          // "যদি"
 				token.LEFT_PAREN,  // '('
@@ -107,7 +107,7 @@ func TestScanTokensBanglaKeywords(t *testing.T) {
 		{
 			name: "Function definition in Bangla",
 			// ফাংশন greet(নাম) { print("হ্যালো, " + নাম); }
-			input: `ফাংশন greet(নাম) { print("হ্যালো, " + নাম); }`,
+			input: `ফাংশন greet(নাম) { দেখাও("হ্যালো, " + নাম); }`,
 			expected: []token.TokenType{
 				token.FUN,         // "ফাংশন"
 				token.IDENTIFIER,  // "greet"

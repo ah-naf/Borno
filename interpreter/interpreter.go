@@ -28,23 +28,23 @@ func NewInterpreter() *Interpreter {
 	// Define the global environment and set up the clock function first
 	globals := environment.NewEnvironment()
 
-	globals.Define("clock", NativeClockFn{})
-	globals.Define("len", NativeLenFn{})
-	globals.Define("append", NativeAppendFn{}) // Register `append` function
-	globals.Define("remove", NativeRemoveFn{})
-	globals.Define("delete", NativeDeleteFn{})
-	globals.Define("keys", NativeKeysFn{})
-	globals.Define("values", NativeValuesFn{})
+	globals.Define("ক্লক", NativeClockFn{})
+	globals.Define("লেন", NativeLenFn{})
+	globals.Define("এড", NativeAppendFn{}) // Register `append` function
+	globals.Define("রিমুভ", NativeRemoveFn{})
+	globals.Define("কি_রিমুভ", NativeDeleteFn{})
+	globals.Define("অব্জেক্ট_কি", NativeKeysFn{})
+	globals.Define("অব্জেক্ট_মান", NativeValuesFn{})
 
-	globals.Define("abs", NativeAbsFn{})
-	globals.Define("sqrt", NativeSqrtFn{})
-	globals.Define("pow", NativePowFn{})
-	globals.Define("sin", NativeSinFn{})
-	globals.Define("cos", NativeCosFn{})
-	globals.Define("tan", NativeTanFn{})
-	globals.Define("min", NativeMinFn{})
-	globals.Define("max", NativeMaxFn{})
-	globals.Define("round", NativeRoundFn{})
+	globals.Define("পরমমান", NativeAbsFn{})
+	globals.Define("বর্গমূল", NativeSqrtFn{})
+	globals.Define("ঘাত", NativePowFn{})
+	globals.Define("সাইন", NativeSinFn{})
+	globals.Define("কসাইন", NativeCosFn{})
+	globals.Define("ট্যান", NativeTanFn{})
+	globals.Define("সর্বনিম্ন", NativeMinFn{})
+	globals.Define("সর্বোচ্চ", NativeMaxFn{})
+	globals.Define("রাউন্ড", NativeRoundFn{})
 
 	globals.Define("ইনপুট", NativeInputFn{})
 
@@ -261,7 +261,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		// Ensure the callee is a callable function
 		function, ok := callee.(Callable)
 		if !ok {
-			utils.RuntimeError(e.Paren, "Can only call functions or classes.")
+			utils.RuntimeError(e.Paren, "Can only call functions.")
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
 

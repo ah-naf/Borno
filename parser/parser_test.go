@@ -182,19 +182,19 @@ func TestParseGrammar(t *testing.T) {
 		},
 		{
 			name:      "Simple If Statement",
-			input:     "যদি (সত্য) { print 1; }",
+			input:     "যদি (সত্য) { দেখাও 1; }",
 			expected:  "if (true){\n(print 1)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "If-Else Statement",
-			input:     "যদি (মিথ্যা) { print 1; } নাহয় { print 2; }",
+			input:     "যদি (মিথ্যা) { দেখাও 1; } নাহয় { দেখাও 2; }",
 			expected:  "if (false){\n(print 1)\n}else {\n(print 2)\n}",
 			expectErr: false,
 		},
 		{
 			name:  "Nested If-Else",
-			input: "যদি (a > b) { যদি (a > c) { print a; } নাহয় { print c; } }",
+			input: "যদি (a > b) { যদি (a > c) { দেখাও a; } নাহয় { দেখাও c; } }",
 			expected: `if ((a > b)){
 if ((a > c)){
 (print a)
@@ -206,13 +206,13 @@ if ((a > c)){
 		},
 		{
 			name:      "Invalid If Statement",
-			input:     "যদি সত্য { print 1; }",
+			input:     "যদি সত্য { দেখাও 1; }",
 			expected:  "",
 			expectErr: true,
 		},
 		{
 			name:  "valid if statement with && condition",
-			input: "যদি(a > b && a > c ) {print c;} নাহয় {print a;}",
+			input: "যদি(a > b && a > c ) {দেখাও c;} নাহয় {দেখাও a;}",
 			expected: `if (((a > b) && (a > c))){
 (print c)
 }else {
@@ -222,61 +222,61 @@ if ((a > c)){
 		},
 		{
 			name:      "Logical AND condition",
-			input:     "যদি (a > b && b > c) { print a; }",
+			input:     "যদি (a > b && b > c) { দেখাও a; }",
 			expected:  "if (((a > b) && (b > c))){\n(print a)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Logical OR condition",
-			input:     "যদি (a > b || b > c) { print b; }",
+			input:     "যদি (a > b || b > c) { দেখাও b; }",
 			expected:  "if (((a > b) || (b > c))){\n(print b)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Logical AND with Logical OR",
-			input:     "যদি (a > b && b > c || c > d) { print b; }",
+			input:     "যদি (a > b && b > c || c > d) { দেখাও b; }",
 			expected:  "if ((((a > b) && (b > c)) || (c > d))){\n(print b)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Nested Logical AND/OR",
-			input:     "যদি ((a > b && b > c) || (c > d && d > e)) { print a; }",
+			input:     "যদি ((a > b && b > c) || (c > d && d > e)) { দেখাও a; }",
 			expected:  "if (((group ((a > b) && (b > c))) || (group ((c > d) && (d > e))))){\n(print a)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Logical OR and comparison",
-			input:     "যদি (a < b || b == c) { print b; }",
+			input:     "যদি (a < b || b == c) { দেখাও b; }",
 			expected:  "if (((a < b) || (b == c))){\n(print b)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Logical AND with comparison and arithmetic",
-			input:     "যদি (a + b > c && b - c < d) { print a; }",
+			input:     "যদি (a + b > c && b - c < d) { দেখাও a; }",
 			expected:  "if ((((a + b) > c) && ((b - c) < d))){\n(print a)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Logical AND with nested parentheses",
-			input:     "যদি ((a && b) && (c || d)) { print সত্য; }",
+			input:     "যদি ((a && b) && (c || d)) { দেখাও সত্য; }",
 			expected:  "if (((group (a && b)) && (group (c || d)))){\n(print true)\n}",
 			expectErr: false,
 		},
 		{
 			name:      "Invalid Logical AND without parentheses",
-			input:     "যদি a && b { print সত্য; }",
+			input:     "যদি a && b { দেখাও সত্য; }",
 			expected:  "",
 			expectErr: true,
 		},
 		{
 			name:      "Invalid Logical OR without parentheses",
-			input:     "যদি a || b { print মিথ্যা; }",
+			input:     "যদি a || b { দেখাও মিথ্যা; }",
 			expected:  "",
 			expectErr: true,
 		},
 		{
 			name:      "Simple While Statement",
-			input:     "যতক্ষণ (সত্য) { print 1; }",
+			input:     "যতক্ষণ (সত্য) { দেখাও 1; }",
 			expected:  "while (true){\n(print 1)\n}",
 			expectErr: false,
 		},
@@ -288,7 +288,7 @@ if ((a > c)){
 		},
 		{
 			name:  "While Statement with Complex Body",
-			input: "যতক্ষণ (x > 0) { যদি (x == 1) { print x; } নাহয় { print -x; } }",
+			input: "যতক্ষণ (x > 0) { যদি (x == 1) { দেখাও x; } নাহয় { দেখাও -x; } }",
 			expected: `while ((x > 0)){
 if ((x == 1)){
 (print x)
@@ -304,7 +304,7 @@ if ((x == 1)){
 						যদি(a == 2) {
 							চালিয়ে_যাও;
 						}
-						print a;
+						দেখাও a;
 					}`,
 			expected: `for (var a = 0; (a < 5); (a = (a + 1))) {
 if ((a == 2)){
@@ -316,7 +316,7 @@ continue
 		},
 		{
 			name:  "Simple For Loop",
-			input: `ফর (ধরি i = 0; i < 10; i = i + 1) { print i; }`,
+			input: `ফর (ধরি i = 0; i < 10; i = i + 1) { দেখাও i; }`,
 			expected: `for (var i = 0; (i < 10); (i = (i + 1))) {
 (print i)
 }`,
@@ -324,7 +324,7 @@ continue
 		},
 		{
 			name:  "For Loop Without Initializer",
-			input: `ফর (; i < 10; i = i + 1) { print i; }`,
+			input: `ফর (; i < 10; i = i + 1) { দেখাও i; }`,
 			expected: `for (; (i < 10); (i = (i + 1))) {
 (print i)
 }`,
@@ -332,7 +332,7 @@ continue
 		},
 		{
 			name:  "For Loop Without Condition",
-			input: `ফর (ধরি i = 0;; i = i + 1) { print i; }`,
+			input: `ফর (ধরি i = 0;; i = i + 1) { দেখাও i; }`,
 			expected: `for (var i = 0; true; (i = (i + 1))) {
 (print i)
 }`,
@@ -340,7 +340,7 @@ continue
 		},
 		{
 			name:  "For Loop Without Increment",
-			input: `ফর (ধরি i = 0; i < 10;) { print i; i = i + 1; }`,
+			input: `ফর (ধরি i = 0; i < 10;) { দেখাও i; i = i + 1; }`,
 			expected: `for (var i = 0; (i < 10); ) {
 (print i)
 (i = (i + 1))
@@ -349,7 +349,7 @@ continue
 		},
 		{
 			name:  "For Loop Without All Clauses",
-			input: `ফর (;;) { print "infinite"; }`,
+			input: `ফর (;;) { দেখাও "infinite"; }`,
 			expected: `for (; true; ) {
 (print infinite)
 }`,
@@ -357,14 +357,14 @@ continue
 		},
 		{
 			name:      "Invalid For Loop",
-			input:     `ফর ধরি i = 0; i < 10; i = i + 1 { print i; }`,
+			input:     `ফর ধরি i = 0; i < 10; i = i + 1 { দেখাও i; }`,
 			expected:  "",
 			expectErr: true,
 		},
 		{
 			name: "Basic Function",
 			input: `ফাংশন add(a, b) {
-print a + b;
+দেখাও a + b;
 }`,
 			expected: `fun add(a, b) {
 (print (a + b))
@@ -386,7 +386,7 @@ print a + b;
 		{
 			name: "Simple Function Declaration",
 			input: `ফাংশন sayHello() {
-print "Hello!";
+দেখাও "Hello!";
 }`,
 			expected: `fun sayHello() {
 (print Hello!)
@@ -449,7 +449,7 @@ print "Hello!";
 		},
 		{
 			name:      "Array in Expression",
-			input:     "print arr[0] + 5;",
+			input:     "দেখাও arr[0] + 5;",
 			expected:  "(print (arr[0] + 5))",
 			expectErr: false,
 		},
