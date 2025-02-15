@@ -1,6 +1,6 @@
 # Borno Programming Language
 
-Borno is a **Bangla-based** programming language that allows developers to write code using **Bangla keywords** and identifiers. Its goal is to provide a familiar programming experience to native Bangla speakers, while still supporting typical programming constructs like variables, functions, arrays, objects, loops, and more.
+Borno is a dynamically typed **Bangla-based** programming language that allows developers to write code using **Bangla keywords** and identifiers. Its goal is to provide a familiar programming experience to native Bangla speakers, while still supporting typical programming constructs like variables, functions, arrays, objects, loops, and more.
 
 ---
 
