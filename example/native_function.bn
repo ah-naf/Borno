@@ -1,8 +1,6 @@
-দেখাও "==== Native Library Demo ====";
-
 // 1) ক্লক (clock) 
 //    Shows the current timestamp in seconds.
-//দেখাও "বর্তমান সময় (সেকেন্ডে): " + ক্লক();
+দেখাও "বর্তমান সময় (সেকেন্ডে): " + ক্লক();
 
 // 2) ইনপুট (input) 
 //    Uncomment these lines to test user input interactively.

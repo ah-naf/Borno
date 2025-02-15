@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -37,7 +36,9 @@ func main() {
 func runFile(path string) {
 	rawContent, err := os.ReadFile(path)
 	if err != nil {
-		panic(err)
+		// Instead of panic, print an error and exit gracefully
+		fmt.Fprintf(os.Stderr, "Error: could not read file '%s': %v\n", path, err)
+		os.Exit(1)
 	}
 	run(string(rawContent), false)
 
@@ -93,13 +94,13 @@ func run(source string, isRepl bool) {
 	// fmt.Println(expr)
 }
 
-func prettyPrint(v interface{}) {
-	// Marshal the struct to JSON with indentation
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	// Print the resulting JSON string
-	fmt.Println(string(data))
-}
+// func prettyPrint(v interface{}) {
+// 	// Marshal the struct to JSON with indentation
+// 	data, err := json.MarshalIndent(v, "", "  ")
+// 	if err != nil {
+// 		fmt.Println("Error:", err)
+// 		return
+// 	}
+// 	// Print the resulting JSON string
+// 	fmt.Println(string(data))
+// }
