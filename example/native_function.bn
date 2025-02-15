@@ -1,0 +1,69 @@
+দেখাও "==== Native Library Demo ====";
+
+// 1) ক্লক (clock) 
+//    Shows the current timestamp in seconds.
+//দেখাও "বর্তমান সময় (সেকেন্ডে): " + ক্লক();
+
+// 2) ইনপুট (input) 
+//    Uncomment these lines to test user input interactively.
+// দেখাও "কিছু লিখুনঃ"
+ধরি প্রবেশ = ইনপুট("আপনার লেখা: ");
+দেখাও "আপনি লিখেছেনঃ " + প্রবেশ;
+
+// 3) লেন (len)
+//    Returns the length of an array.
+ধরি তালিকা = [১০, ২০, ৩০];
+দেখাও লেন(তালিকা);
+
+// 4) এড (append)
+//    Appends one or more elements to the array.
+তালিকা = এড(তালিকা, ৪০);
+দেখাও তালিকা;
+
+// 5) রিমুভ (remove)
+//    Removes an element from the array at a given index.
+তালিকা = রিমুভ(তালিকা, ১);
+দেখাও তালিকা;
+
+// 6) কি_রিমুভ (delete)
+//    Deletes a property from an object by key.
+ধরি বস্তু = {
+    নাম: "বর্ণলিপি",
+    ধরন: "ডেমো",
+    মান: ৫
+};
+দেখাও বস্তু;
+কি_রিমুভ(বস্তু, "মান");
+দেখাও বস্তু;
+
+// 7) অব্জেক্ট_কি (keys) এবং অব্জেক্ট_মান (values)
+//    Gets arrays of keys or values from an object.
+দেখাও অব্জেক্ট_কি(বস্তু);
+দেখাও অব্জেক্ট_মান(বস্তু);
+
+// 8) পরমমান (abs)
+//    Returns the absolute value of a number.
+দেখাও "পরমমান(-১২.৫): " + পরমমান(-১২.৫);
+
+// 9) বর্গমূল (sqrt)
+//    Computes the square root of a number.
+দেখাও "বর্গমূল(১৬): " + বর্গমূল(১৬);
+
+// 10) ঘাত (pow)
+//     Raises the first number to the power of the second.
+দেখাও "ঘাত(২, ৮): " + ঘাত(২, ৮);
+
+// 11) সাইন (sin), কসাইন (cos), ট্যান (tan)
+//     Common trigonometric functions in radians.
+দেখাও "সাইন(৩.১৪/২) => " + সাইন(৩.১৪ / ২);
+দেখাও "কসাইন(০) => " + কসাইন(০);
+দেখাও "ট্যান(৩.১৪/৪) => " + ট্যান(৩.১৪ / ৪);
+
+// 12) সর্বনিম্ন (min), সর্বোচ্চ (max)
+//     Returns the smallest/largest value among the given numbers.
+দেখাও "সর্বনিম্ন(১০, ৫, -৩, ৮) => " + সর্বনিম্ন(১০, ৫, -৩, ৮);
+দেখাও "সর্বোচ্চ(১০, ৫, -৩, ৮) => " + সর্বোচ্চ(১০, ৫, -৩, ৮);
+
+// 13) রাউন্ড (round)
+//     Rounds a floating-point number to the nearest integer.
+দেখাও "রাউন্ড(৩.৬৭) => " + রাউন্ড(৩.৬৭);

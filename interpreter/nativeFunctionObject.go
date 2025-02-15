@@ -17,8 +17,13 @@ func (n NativeDeleteFn) Call(i *Interpreter, arguments []interface{}) (interface
 	}
 
 	// Ensure the second argument is a string (key)
-	key, ok := arguments[1].(string)
-	if !ok {
+	var key string
+	switch v := arguments[1].(type) {
+	case string:
+		key = v
+	case []rune:
+		key = string(v) // Convert []rune to string
+	default:
 		return nil, fmt.Errorf("delete function expects the second argument to be a string key")
 	}
 

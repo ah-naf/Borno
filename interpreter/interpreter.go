@@ -125,7 +125,13 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			if signal.Type != ControlFlowNone {
 				return nil, signal
 			}
-			properties[key] = value
+			
+			// If 'value' is a []rune, convert it to a string
+			if runes, ok := value.([]rune); ok {
+				properties[key] = string(runes)
+			} else {
+				properties[key] = value
+			}
 		}
 
 		return properties, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
@@ -474,8 +480,9 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 
 	case *ast.ForStmt:
 		// Execute the initializer
+		newEnvironement := environment.NewEnvironmentWithParent(env)
 		if e.Initializer != nil {
-			_, signal := i.eval(e.Initializer, env, isRepl)
+			_, signal := i.eval(e.Initializer, newEnvironement, isRepl)
 			if signal.Type != ControlFlowNone {
 				return nil, signal
 			}
@@ -484,7 +491,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		for {
 			// Check the condition
 			if e.Condition != nil {
-				condVal, signal := i.eval(e.Condition, env, isRepl)
+				condVal, signal := i.eval(e.Condition, newEnvironement, isRepl)
 				if signal.Type != ControlFlowNone {
 					return nil, signal
 				}
@@ -493,7 +500,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 				}
 			}
 			// Execute the body
-			_, signal := i.eval(e.Body, env, isRepl)
+			_, signal := i.eval(e.Body, newEnvironement, isRepl)
 			if signal.Type == ControlFlowBreak {
 				break
 			}
@@ -505,7 +512,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 
 			// Execute the increment
 			if e.Increment != nil {
-				_, signal := i.eval(e.Increment, env, isRepl)
+				_, signal := i.eval(e.Increment, newEnvironement, isRepl)
 				if signal.Type != ControlFlowNone {
 					return nil, signal
 				}
@@ -587,7 +594,7 @@ func evaluateUnary(operator token.Token, right interface{}) interface{} {
 	if utils.HadRuntimeError {
 		return nil
 	}
-
+	// fmt.Printf("%#v\n", operator)
 	switch operator.Type {
 	case token.MINUS:
 		value, err := toNumber(right)
@@ -652,6 +659,11 @@ func handleAddition(left, right interface{}, operator token.Token) interface{} {
 			rightStr = string(r)
 		case string:
 			rightStr = r
+		case bool:
+			rightStr = "false"
+			if r {
+				rightStr = "true"
+			}
 		default:
 			// If the right operand isn’t directly a string or []rune,
 			// attempt to stringify it using your helper.

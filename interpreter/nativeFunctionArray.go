@@ -40,11 +40,8 @@ func (n NativeAppendFn) Call(i *Interpreter, arguments []interface{}) (interface
 	if !ok {
 		return nil, fmt.Errorf("append function only works on arrays")
 	}
-
 	// Append all other arguments to the array
-	for _, elem := range arguments[1:] {
-		array = append(array, elem)
-	}
+	array = append(array, arguments[1:]...)
 
 	return array, nil
 }

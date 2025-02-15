@@ -34,10 +34,18 @@ func (n NativeInputFn) Call(i *Interpreter, arguments []interface{}) (interface{
 
 	// If a prompt argument is provided, print it
 	if len(arguments) == 1 {
-		prompt, ok := arguments[0].(string)
-		if !ok {
-			return nil, fmt.Errorf("input function's argument must be a string")
+		var prompt string
+		switch arg := arguments[0].(type) {
+		case string:
+			// Already a Go string
+			prompt = arg
+		case []rune:
+			// Convert rune slice to string
+			prompt = string(arg)
+		default:
+			return nil, fmt.Errorf("input function's argument must be a string or []rune")
 		}
+	
 		fmt.Print(prompt)
 	}
 
