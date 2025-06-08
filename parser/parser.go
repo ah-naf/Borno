@@ -66,10 +66,60 @@ func (p *Parser) declaration() (ast.Stmt, error) {
 	if p.match(token.FUN) {
 		return p.function("function")
 	}
+	if p.match(token.CLASS) {
+		return p.classDeclaration()
+	}
 	if p.match(token.VAR) {
 		return p.varDeclaration()
 	}
 	return p.statement()
+}
+
+func (p *Parser) classDeclaration() (ast.Stmt, error) {
+	name, err := p.consume(token.IDENTIFIER, "Expect class name.")
+	if err != nil {
+		return nil, err
+	}
+
+	var superclass *ast.Identifier
+	if p.match(token.LESS) { // Assuming '<' for inheritance
+		superclassName, err := p.consume(token.IDENTIFIER, "Expect superclass name.")
+		if err != nil {
+			return nil, err
+		}
+		// Ensure ast.Identifier has a field like 'Name' of type token.Token
+		// and a 'Line' field. The current ast.Identifier is { Name token.Token, Line int }
+		// which is suitable.
+		superclass = &ast.Identifier{Name: superclassName, Line: superclassName.Line}
+	}
+
+	_, err = p.consume(token.LEFT_BRACE, "Expect '{' before class body.")
+	if err != nil {
+		return nil, err
+	}
+
+	methods := []*ast.FunctionStmt{}
+	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		// Re-use or adapt p.function() for method parsing.
+		// p.function() returns ast.Stmt, so we need to cast it.
+		methodStmt, err := p.function("method") // Pass "method" as kind
+		if err != nil {
+			return nil, err
+		}
+		if method, ok := methodStmt.(*ast.FunctionStmt); ok {
+			methods = append(methods, method)
+		} else {
+			// This should not happen if p.function() returns FunctionStmt for kind "method"
+			return nil, p.error(p.peek(), "Expected a method definition.")
+		}
+	}
+
+	_, err = p.consume(token.RIGHT_BRACE, "Expect '}' after class body.")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.ClassStmt{Name: name, Superclass: superclass, Methods: methods}, nil
 }
 
 func (p *Parser) varDeclaration() (ast.Stmt, error) {
@@ -428,14 +478,16 @@ func (p *Parser) assignment() (ast.Expr, error) {
 				Value: value,
 				Line:  equalOperator.Line,
 			}, nil
-		case *ast.PropertyAccess:
-			// Handle object property access assignment
-			return &ast.PropertyAssignment{
-				Object:   target.Object,
-				Property: target.Property,
-				Value:    value,
-				Line:     equalOperator.Line,
-			}, nil
+		// case *ast.PropertyAccess:  // Commented out or removed
+		// 	// Handle object property access assignment
+		// 	return &ast.PropertyAssignment{
+		// 		Object:   target.Object,
+		// 		Property: target.Property,
+		// 		Value:    value,
+		// 		Line:     equalOperator.Line,
+		// 	}, nil
+		case *ast.Get: // New: Check if LHS is an ast.Get expression
+			return &ast.Set{Object: target.Object, Name: target.Name, Value: value, Line: equalOperator.Line}, nil
 		default:
 			// If the left-hand side is neither, throw an error
 			return nil, p.error(equalOperator, "Invalid assignment target.")
@@ -714,12 +766,12 @@ func (p *Parser) call() (ast.Expr, error) {
 			expr = &ast.ArrayAccess{Array: expr, Index: index, Line: p.previous().Line}
 			// fmt.Printf("%#v\n", expr)
 		} else if p.match(token.DOT) {
-			// Handle property access
-			propName, err := p.consume(token.IDENTIFIER, "Expect property name after '.'.")
+			name, err := p.consume(token.IDENTIFIER, "Expect property name after '.'.")
 			if err != nil {
 				return nil, err
 			}
-			expr = &ast.PropertyAccess{Object: expr, Property: propName, Line: p.previous().Line}
+			// Replace ast.PropertyAccess with ast.Get
+			expr = &ast.Get{Object: expr, Name: name, Line: name.Line}
 		} else {
 			break // No more call expressions to parse.
 		}
@@ -769,6 +821,22 @@ func (p *Parser) primary() (ast.Expr, error) {
 	}
 	if p.match(token.NIL) {
 		return &ast.Literal{Value: nil, Line: p.previous().Line}, nil
+	}
+
+	if p.match(token.THIS) {
+		return &ast.ThisExpr{Keyword: p.previous(), Line: p.previous().Line}, nil
+	}
+	if p.match(token.SUPER) {
+		keyword := p.previous()
+		_, err := p.consume(token.DOT, "Expect '.' after 'super'.")
+		if err != nil {
+			return nil, err
+		}
+		method, err := p.consume(token.IDENTIFIER, "Expect superclass method name.")
+		if err != nil {
+			return nil, err
+		}
+		return &ast.SuperExpr{Keyword: keyword, Method: method, Line: keyword.Line}, nil
 	}
 
 	if p.match(token.NUMBER, token.STRING) {

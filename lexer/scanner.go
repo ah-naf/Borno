@@ -26,6 +26,9 @@ var keywords = map[string]token.TokenType{
 	// Logical operators in Bangla
 	"এবং": token.LOGICAL_AND,
 	"বা":  token.LOGICAL_OR,
+	"শ্রেণী":      token.CLASS, // Ensure this is present and correct
+	"এইটা":       token.THIS,  // New
+	"সুপার":      token.SUPER, // New
 }
 
 type Scanner struct {

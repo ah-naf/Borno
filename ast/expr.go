@@ -165,3 +165,57 @@ type PropertyAccess struct {
 func (p *PropertyAccess) String() string {
 	return fmt.Sprintf("%s.%s", p.Object.String(), p.Property.Lexeme)
 }
+
+// Get represents a property access expression.
+type Get struct {
+	Object Expr
+	Name   token.Token
+	Line   int
+}
+
+func (g *Get) String() string {
+	return fmt.Sprintf("(%s.%s)", g.Object.String(), g.Name.Lexeme)
+}
+
+// Set represents a property assignment expression.
+type Set struct {
+	Object Expr
+	Name   token.Token
+	Value  Expr
+	Line   int
+}
+
+func (s *Set) String() string {
+	return fmt.Sprintf("(%s.%s = %s)", s.Object.String(), s.Name.Lexeme, s.Value.String())
+}
+
+// ThisExpr represents the 'this' keyword.
+type ThisExpr struct {
+	Keyword token.Token
+	Line    int
+}
+
+func (t *ThisExpr) String() string {
+	return "this"
+}
+
+// SuperExpr represents the 'super' keyword used for accessing superclass methods.
+type SuperExpr struct {
+	Keyword token.Token // The 'super' keyword
+	Method  token.Token // The method name identifier
+	Line    int
+}
+
+func (s *SuperExpr) String() string {
+	return fmt.Sprintf("super.%s", s.Method.Lexeme)
+}
+
+// PropertyAccess struct {
+// 	Object   Expr
+// 	Property token.Token
+// 	Line     int
+// }
+
+// func (p *PropertyAccess) String() string {
+// 	return fmt.Sprintf("%s.%s", p.Object.String(), p.Property.Lexeme)
+// }

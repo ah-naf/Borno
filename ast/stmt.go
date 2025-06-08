@@ -175,6 +175,21 @@ func (f *FunctionStmt) String() string {
 	return fmt.Sprintf("fun %s(%s) {\n%s}", f.Name.Lexeme, paramNames, bodyStr)
 }
 
+// ClassStmt represents a class declaration statement.
+type ClassStmt struct {
+	Name       token.Token
+	Superclass *Identifier // Assuming ast.Identifier is defined in ast/expr.go
+	Methods    []*FunctionStmt
+}
+
+// String returns a string representation of the class statement.
+func (c *ClassStmt) String() string {
+	superclassStr := ""
+	if c.Superclass != nil {
+		superclassStr = fmt.Sprintf(" < %s", c.Superclass.String())
+	}
+	return fmt.Sprintf("class %s%s { ... %d methods ... }", c.Name.Lexeme, superclassStr, len(c.Methods))
+}
 
 type ArrayAssignment struct {
 	Array Expr   // The array being assigned to
@@ -195,6 +210,14 @@ type PropertyAssignment struct {
 	Line     int
 }
 
-func (p *PropertyAssignment) String() string {
-	return fmt.Sprintf("%s.%s = %s", p.Object.String(), p.Property.Lexeme, p.Value.String())
-}
+// func (p *PropertyAssignment) String() string {
+// 	return fmt.Sprintf("%s.%s = %s", p.Object.String(), p.Property.Lexeme, p.Value.String())
+// }
+
+// PropertyAssignment represents assigning a value to an object's property.
+// type PropertyAssignment struct {
+// 	Object   Expr
+// 	Property token.Token
+// 	Value    Expr
+// 	Line     int
+// }

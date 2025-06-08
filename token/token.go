@@ -51,6 +51,8 @@ const (
 	CONTINUE
 	LOGICAL_AND
 	CLASS
+	SUPER // New
+	THIS  // New
 	ELSE
 	FALSE
 	FUN

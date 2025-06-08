@@ -93,30 +93,120 @@ func (i *Interpreter) Interpret(statements []ast.Stmt, isRepl bool) []interface{
 func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl bool) (interface{}, *ControlFlowSignal) {
 	// fmt.Printf("%T\n", expr)
 	switch e := expr.(type) {
-	case *ast.PropertyAssignment:
-		objectValue, signal := i.eval(e.Object, env, isRepl)
-		if signal.Type != ControlFlowNone {
-			return nil, signal
+	case *ast.ClassStmt:
+		var actualSuperclass *BanglaClass
+		classEnv := env
+
+		if e.Superclass != nil {
+			sVal, sig := i.eval(e.Superclass, env, isRepl)
+			if sig.Type != ControlFlowNone { return nil, sig }
+			if utils.HadRuntimeError { return nil, &ControlFlowSignal{Type: ControlFlowNone} }
+
+			if sc, ok := sVal.(*BanglaClass); ok {
+				actualSuperclass = sc
+			} else {
+				utils.RuntimeError(e.Superclass.Name, "Superclass must be a class.")
+				return nil, &ControlFlowSignal{Type: ControlFlowNone}
+			}
+			classEnv = environment.NewEnvironmentWithParent(env)
+			classEnv.Define("সুপার", actualSuperclass)
 		}
 
-		// Ensure the object is a map
-		object, ok := objectValue.(map[string]interface{})
+		methods := make(map[string]*Function) // Ensure *Function type
+		for _, methodNode := range e.Methods {
+			function := NewFunction(methodNode, classEnv)
+			if methodNode.Name.Lexeme == "init" { // Standard name for constructor
+				function.IsInitializer = true
+			}
+			methods[methodNode.Name.Lexeme] = function
+		}
+
+		klass := &BanglaClass{
+			Name:       e.Name.Lexeme,
+			Superclass: actualSuperclass,
+			Methods:    methods,
+		}
+		env.Define(e.Name.Lexeme, klass)
+		return nil, &ControlFlowSignal{Type: ControlFlowNone}
+
+	case *ast.Get:
+		object, sig := i.eval(e.Object, env, isRepl)
+		if sig.Type != ControlFlowNone { return nil, sig }
+		if utils.HadRuntimeError { return nil, &ControlFlowSignal{Type: ControlFlowNone} }
+
+		instance, ok := object.(*BanglaInstance)
 		if !ok {
-			utils.RuntimeError(token.Token{Line: e.Line}, "Invalid object assignment. Not an object.")
-			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+			// Use e.Name as token for error line, or e.Object if more appropriate
+			utils.RuntimeError(e.Name, "Only instances have properties.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone}
+		}
+		// instance.Get in class.go uses os.Exit on error.
+		// If it were to return an error: val, err := instance.Get(e.Name, i)
+		// and then handle err. For now, assume os.Exit path.
+		val, _ := instance.Get(e.Name, i) // Pass interpreter 'i'
+		// If Get exits, this part is not reached. If it returns error, 'val' could be nil.
+		return val, &ControlFlowSignal{Type: ControlFlowNone}
+
+	case *ast.Set:
+		object, sig := i.eval(e.Object, env, isRepl)
+		if sig.Type != ControlFlowNone { return nil, sig }
+		if utils.HadRuntimeError { return nil, &ControlFlowSignal{Type: ControlFlowNone} }
+
+		instance, ok := object.(*BanglaInstance)
+		if !ok {
+			utils.RuntimeError(e.Name, "Only instances have fields.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone}
 		}
 
-		// Evaluate the new value to assign
-		newValue, signal := i.eval(e.Value, env, isRepl)
-		if signal.Type != ControlFlowNone {
-			return nil, signal
+		value, sigEval := i.eval(e.Value, env, isRepl)
+		if sigEval.Type != ControlFlowNone { return nil, sigEval }
+		if utils.HadRuntimeError { return nil, &ControlFlowSignal{Type: ControlFlowNone} }
+
+		instance.Set(e.Name, value)
+		return value, &ControlFlowSignal{Type: ControlFlowNone}
+
+	case *ast.ThisExpr:
+		value, err := env.Get(e.Keyword.Lexeme) // e.g., "এইটা"
+		if err != nil {
+			utils.RuntimeError(e.Keyword, "Cannot use '"+e.Keyword.Lexeme+"' outside of an appropriate class context.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone}
+		}
+		return value, &ControlFlowSignal{Type: ControlFlowNone}
+
+	case *ast.SuperExpr:
+		superclassVal, errSuper := env.Get("সুপার")
+		if errSuper != nil {
+			utils.RuntimeError(e.Keyword, "Cannot use 'super': 'super' is not defined in this context.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone}
+		}
+		superclass, okSuper := superclassVal.(*BanglaClass)
+		if !okSuper {
+			utils.RuntimeError(e.Keyword, "'super' is not a class.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone}
 		}
 
-		// Assign the new value to the property
-		propertyName := e.Property.Lexeme
-		object[propertyName] = newValue
+		instanceVal, errThis := env.Get("এইটা")
+		if errThis != nil {
+			utils.RuntimeError(e.Keyword, "Cannot use 'super': 'this' is not defined in this context.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone}
+		}
+		instance, okThis := instanceVal.(*BanglaInstance)
+		if !okThis {
+			utils.RuntimeError(e.Keyword, "'this' is not an instance.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone}
+		}
 
-		return newValue, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		method, found := superclass.FindMethod(e.Method.Lexeme)
+		if !found {
+			utils.RuntimeError(e.Method, fmt.Sprintf("Undefined method '%s' on superclass '%s'.", e.Method.Lexeme, superclass.Name))
+			return nil, &ControlFlowSignal{Type: ControlFlowNone}
+		}
+		boundMethod := method.Bind(instance) // Bind returns Callable
+		return boundMethod, &ControlFlowSignal{Type: ControlFlowNone}
+
+	// case *ast.PropertyAssignment: // REMOVED
+	// case *ast.PropertyAccess: // REMOVED
+
 	case *ast.ObjectLiteral:
 		properties := make(map[string]interface{})
 
@@ -135,27 +225,6 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		}
 
 		return properties, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
-
-	case *ast.PropertyAccess:
-		objectValue, signal := i.eval(e.Object, env, isRepl)
-		if signal.Type != ControlFlowNone {
-			return nil, signal
-		}
-
-		object, ok := objectValue.(map[string]interface{})
-		if !ok {
-			utils.RuntimeError(token.Token{Line: e.Line}, "Invalid property access. Not an object.")
-			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
-		}
-
-		propertyName := e.Property.Lexeme
-		value, exists := object[propertyName]
-		if !exists {
-			utils.RuntimeError(token.Token{Line: e.Line}, "Property '"+propertyName+"' does not exist on object '"+e.Object.String()+"'.")
-			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
-		}
-
-		return value, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.ArrayLiteral:
 		elements := []interface{}{}
