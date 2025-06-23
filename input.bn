@@ -1,11 +1,19 @@
-class Superhero {};
+class Wizard {};
+var gandalf = Wizard();
 
-var count = 0;
-while (count < 3) {
-  var hero = Superhero();
-  print "Hero created:";
-  print hero;
-  count = count + 1;
+gandalf.color = "Grey";
+gandalf.power = nil;
+print gandalf.color;
+
+fun promote(wizard) {
+  wizard.color = "White";
+  if (true) {
+    wizard.power = 100;
+  } else {
+    wizard.power = 0;
+  }
 }
 
-print "All heroes created!";
+promote(gandalf);
+print gandalf.color;
+print gandalf.power;

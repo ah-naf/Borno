@@ -45,6 +45,7 @@ func (l *Literal) String() string {
 		return "nil"
 	}
 
+	fmt.Println("sfs")
 	if runes, ok := l.Value.([]rune); ok {
 		return norm.NFC.String(string(runes))
 	}

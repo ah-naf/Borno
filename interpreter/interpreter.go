@@ -99,13 +99,6 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			return nil, signal
 		}
 
-		// Ensure the object is a map
-		object, ok := objectValue.(map[string]interface{})
-		if !ok {
-			utils.RuntimeError(token.Token{Line: e.Line}, "Invalid object assignment. Not an object.")
-			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
-		}
-
 		// Evaluate the new value to assign
 		newValue, signal := i.eval(e.Value, env, isRepl)
 		if signal.Type != ControlFlowNone {
@@ -114,9 +107,18 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 
 		// Assign the new value to the property
 		propertyName := e.Property.Lexeme
-		object[propertyName] = newValue
 
-		return newValue, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		switch obj := objectValue.(type) {
+		case map[string]interface{}:
+			obj[propertyName] = newValue
+			return newValue, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		case *Instance:
+			obj.Set(e.Property, newValue)
+			return newValue, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		default:
+			utils.RuntimeError(token.Token{Line: e.Line}, "Invalid object assignment. Not an object.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
 	case *ast.ObjectLiteral:
 		properties := make(map[string]interface{})
 
@@ -142,20 +144,27 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			return nil, signal
 		}
 
-		object, ok := objectValue.(map[string]interface{})
-		if !ok {
+		propertyName := e.Property.Lexeme
+
+		switch obj := objectValue.(type) {
+		case map[string]interface{}:
+			value, exists := obj[propertyName]
+			if !exists {
+				utils.RuntimeError(token.Token{Line: e.Line}, "Property '"+propertyName+"' does not exist on object '"+e.Object.String()+"'.")
+				return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+			}
+			return value, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		case *Instance:
+			val, err := obj.Get(e.Property)
+			if err != nil {
+				utils.RuntimeError(token.Token{Line: e.Line}, err.Error())
+				return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+			}
+			return val, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		default:
 			utils.RuntimeError(token.Token{Line: e.Line}, "Invalid property access. Not an object.")
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
-
-		propertyName := e.Property.Lexeme
-		value, exists := object[propertyName]
-		if !exists {
-			utils.RuntimeError(token.Token{Line: e.Line}, "Property '"+propertyName+"' does not exist on object '"+e.Object.String()+"'.")
-			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
-		}
-
-		return value, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.ArrayLiteral:
 		elements := []interface{}{}

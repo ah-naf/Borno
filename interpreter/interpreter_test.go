@@ -1,7 +1,9 @@
 package interpreter
 
 import (
+	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"math"
 	"os"
@@ -383,7 +385,6 @@ func tokenTypeToLexeme(tokenType token.TokenType) string {
 	}
 }
 
-
 func TestClassInstantiation(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -436,6 +437,156 @@ func TestClassInstantiation(t *testing.T) {
 			str := stringify(result)
 			if str != tt.expected {
 				t.Fatalf("Expected %s, got %s", tt.expected, str)
+			}
+		})
+	}
+}
+
+func TestInstanceProperties(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []interface{}
+	}{
+		{
+			name: "Basic property get/set",
+			input: `
+class Spaceship {};
+var falcon = Spaceship();
+
+falcon.name = "Millennium Falcon";
+falcon.speed = 75.5;
+
+print falcon.name;
+print falcon.speed;
+			`,
+			expected: []interface{}{"Millennium Falcon", 75.5},
+		},
+		{
+			name: "Multiple instances properties",
+			input: `
+class Robot {};
+var r2d2 = Robot();
+
+r2d2.model = "Astromech";
+r2d2.operational = false;
+
+if (r2d2.operational) {
+  print r2d2.model;
+  r2d2.mission = "Navigate hyperspace";
+  print r2d2.mission;
+}
+			`,
+			expected: []interface{}{},
+		},
+		{
+			name: "Property manipulation in function",
+			input: `
+// Multiple instances with properties
+class Superhero {};
+var batman = Superhero();
+var superman = Superhero();
+
+batman.name = "Batman";
+batman.called = 18;
+
+superman.name = "Superman";
+superman.called = 66;
+
+print "Times " + superman.name + " was called: ";
+print superman.called;
+print "Times " + batman.name + " was called: ";
+print batman.called;
+			`,
+			expected: []interface{}{"Times Superman was called: ", int64(66), "Times Batman was called: ", int64(18)},
+		},
+		{
+			name: "Another property manipulation in function",
+			input: `
+// Property manipulation in functions
+class Wizard {};
+var gandalf = Wizard();
+
+gandalf.color = "Grey";
+gandalf.power = nil;
+print gandalf.color;
+
+fun promote(wizard) {
+  wizard.color = "White";
+  if (true) {
+    wizard.power = 100;
+  } else {
+    wizard.power = 0;
+  }
+}
+
+promote(gandalf);
+print gandalf.color;
+print gandalf.power;
+			`,
+			expected: []interface{}{"Grey", "White", int64(100)},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			utils.HadError = false
+			utils.HadRuntimeError = false
+
+			// 1) lex & parse
+			scanner := lexer.NewScanner([]rune(tt.input))
+			tokens := scanner.ScanTokens()
+
+			parser := parser.NewParser(tokens)
+			stmts, err := parser.Parse()
+			if err != nil || utils.HadError {
+				t.Fatalf("Parser error: %v", err)
+			}
+
+			// 2) capture stdout
+			oldStdout := os.Stdout
+			r, w, err := os.Pipe()
+			if err != nil {
+				t.Fatalf("Failed to create pipe: %v", err)
+			}
+			os.Stdout = w
+
+			// 3) run the interpreter
+			interp := NewInterpreter()
+			_ = interp.Interpret(stmts, false)
+
+			// 4) restore stdout and read captured output
+			w.Close()
+			var buf bytes.Buffer
+			_, _ = io.Copy(&buf, r)
+			os.Stdout = oldStdout
+
+			if utils.HadRuntimeError {
+				t.Fatalf("Runtime error while executing %s", tt.name)
+			}
+
+			// 5) split into lines and compare
+			output := strings.TrimSpace(buf.String())
+			lines := []string{}
+			scannerOut := bufio.NewScanner(strings.NewReader(output))
+			for scannerOut.Scan() {
+				lines = append(lines, scannerOut.Text())
+			}
+			if err := scannerOut.Err(); err != nil {
+				t.Fatalf("Error reading output: %v", err)
+			}
+
+			if len(lines) != len(tt.expected) {
+				t.Fatalf("Expected %d lines of output, got %d: %v",
+					len(tt.expected), len(lines), lines)
+			}
+
+			for i, exp := range tt.expected {
+				// convert expected to its printed form
+				expStr := fmt.Sprint(exp)
+				if lines[i] != expStr {
+					t.Errorf("line %d: expected %q, got %q", i+1, expStr, lines[i])
+				}
 			}
 		})
 	}

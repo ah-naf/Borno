@@ -1,5 +1,11 @@
 package interpreter
 
+import (
+	"fmt"
+
+	"github.com/ah-naf/borno/token"
+)
+
 // Class represents a user-defined class.
 type Class struct {
 	Name string
@@ -36,9 +42,19 @@ func (i *Instance) String() string {
 	return i.Class.Name + " instance"
 }
 
+func (i *Instance) Get(name token.Token) (interface{}, error) {
+	if value, ok := i.Fields[name.Lexeme]; ok {
+		return value, nil
+	}
+	return nil, fmt.Errorf("Undefined property '%s'.", name.Lexeme)
+}
+
+// Set assigns a value to a property by name.
+func (i *Instance) Set(name token.Token, value interface{}) {
+	i.Fields[name.Lexeme] = value
+}
+
 // Call creates a new instance of the class.
 func (c *Class) Call(i *Interpreter, arguments []interface{}) (interface{}, error) {
 	return NewInstance(c), nil
 }
-
-
