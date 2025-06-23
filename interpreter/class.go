@@ -9,10 +9,11 @@ import (
 // Class represents a user-defined class.
 type Class struct {
 	Name string
+	Methods map[string]*Function
 }
 
-func NewClass(name string) *Class {
-	return &Class{Name: name}
+func NewClass(name string, methods map[string]*Function) *Class {
+	return &Class{Name: name, Methods: methods}
 }
 
 func (c *Class) String() string {
@@ -45,6 +46,9 @@ func (i *Instance) String() string {
 func (i *Instance) Get(name token.Token) (interface{}, error) {
 	if value, ok := i.Fields[name.Lexeme]; ok {
 		return value, nil
+	}
+	if method, ok := i.Class.Methods[name.Lexeme]; ok {
+		return method, nil
 	}
 	return nil, fmt.Errorf("Undefined property '%s'.", name.Lexeme)
 }

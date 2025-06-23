@@ -1,19 +1,7 @@
-class Wizard {};
-var gandalf = Wizard();
-
-gandalf.color = "Grey";
-gandalf.power = nil;
-print gandalf.color;
-
-fun promote(wizard) {
-  wizard.color = "White";
-  if (true) {
-    wizard.power = 100;
-  } else {
-    wizard.power = 0;
+class Foo {
+  returnSelf() {
+    return Foo;
   }
-}
+};
 
-promote(gandalf);
-print gandalf.color;
-print gandalf.power;
+print Foo().returnSelf();

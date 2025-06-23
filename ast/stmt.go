@@ -199,10 +199,14 @@ func (p *PropertyAssignment) String() string {
 }
 
 type ClassStmt struct {
-	Name token.Token
+	Name    token.Token
+	Methods []*FunctionStmt
 }
 
 func (c *ClassStmt) String() string {
-	fmt.Println("ss")
-	return fmt.Sprintf("class %s {}", c.Name.Lexeme)
+	methodsStr := ""
+	for _, m := range c.Methods {
+		methodsStr += m.String() + "\n"
+	}
+	return fmt.Sprintf("class %s {\n%s}", c.Name.Lexeme, methodsStr)
 }

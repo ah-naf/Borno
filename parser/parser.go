@@ -392,6 +392,15 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 		return nil, err
 	}
 
+	methods := []*ast.FunctionStmt{}
+	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		m, err := p.function("method")
+		if err != nil {
+			return nil, err
+		}
+		methods = append(methods, m.(*ast.FunctionStmt))
+	}
+
 	_, err = p.consume(token.RIGHT_BRACE, "Expect '}' after class body.")
 	if err != nil {
 		return nil, err
@@ -402,7 +411,7 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	return &ast.ClassStmt{Name: name}, nil
+	return &ast.ClassStmt{Name: name, Methods: methods}, nil
 }
 
 func (p *Parser) block() ([]ast.Stmt, error) {

@@ -254,7 +254,12 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.ClassStmt:
-		class := NewClass(e.Name.Lexeme)
+		methods := make(map[string]*Function)
+		for _, m := range e.Methods {
+			fn := NewFunction(m, environment.NewEnvironmentWithParent(env))
+			methods[m.Name.Lexeme] = fn
+		}
+		class := NewClass(e.Name.Lexeme, methods)
 		env.Define(e.Name.Lexeme, class)
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
