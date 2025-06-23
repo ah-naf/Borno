@@ -44,11 +44,11 @@ func (l *Literal) String() string {
 	if l.Value == nil {
 		return "nil"
 	}
-	
+
 	if runes, ok := l.Value.([]rune); ok {
-        return norm.NFC.String(string(runes))
-    }
-    return norm.NFC.String(fmt.Sprintf("%v", l.Value))
+		return norm.NFC.String(string(runes))
+	}
+	return norm.NFC.String(fmt.Sprintf("%v", l.Value))
 }
 
 // Unary represents a unary expression.

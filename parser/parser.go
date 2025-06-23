@@ -63,6 +63,9 @@ func (p *Parser) Parse() ([]ast.Stmt, error) {
 }
 
 func (p *Parser) declaration() (ast.Stmt, error) {
+	if p.match(token.CLASS) {
+		return p.classDeclaration()
+	}
 	if p.match(token.FUN) {
 		return p.function("function")
 	}
@@ -372,6 +375,29 @@ func (p *Parser) function(kind string) (ast.Stmt, error) {
 	}
 
 	return &ast.FunctionStmt{Name: name, Params: parameters, Body: body}, nil
+}
+
+func (p *Parser) classDeclaration() (ast.Stmt, error) {
+	name, err := p.consume(token.IDENTIFIER, "Expect class name.")
+	if err != nil {
+		return nil, err
+	}
+
+	if _, isReserved := reservedIdentifiers[name.Lexeme]; isReserved {
+		return nil, p.error(name, fmt.Sprintf("'%s' is a reserved identifier and cannot be used as a class name.", name.Lexeme))
+	}
+
+	_, err = p.consume(token.LEFT_BRACE, "Expect '{' before class body.")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(token.RIGHT_BRACE, "Expect '}' after class body.")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.ClassStmt{Name: name}, nil
 }
 
 func (p *Parser) block() ([]ast.Stmt, error) {

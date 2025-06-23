@@ -125,7 +125,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			if signal.Type != ControlFlowNone {
 				return nil, signal
 			}
-			
+
 			// If 'value' is a []rune, convert it to a string
 			if runes, ok := value.([]rune); ok {
 				properties[key] = string(runes)
@@ -242,6 +242,11 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		function := NewFunction(e, environment.NewEnvironmentWithParent(env))
 		// fmt.Printf("%#v %#v\n",e.Name.Lexeme, function)
 		env.Define(e.Name.Lexeme, function)
+		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
+	case *ast.ClassStmt:
+		class := NewClass(e.Name.Lexeme)
+		env.Define(e.Name.Lexeme, class)
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.Return:

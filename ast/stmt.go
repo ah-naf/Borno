@@ -175,12 +175,11 @@ func (f *FunctionStmt) String() string {
 	return fmt.Sprintf("fun %s(%s) {\n%s}", f.Name.Lexeme, paramNames, bodyStr)
 }
 
-
 type ArrayAssignment struct {
-	Array Expr   // The array being assigned to
-	Index Expr   // The index of the element being assigned to
-	Value Expr   // The new value being assigned
-	Line  int    // The line number of the assignment
+	Array Expr // The array being assigned to
+	Index Expr // The index of the element being assigned to
+	Value Expr // The new value being assigned
+	Line  int  // The line number of the assignment
 }
 
 func (a *ArrayAssignment) String() string {
@@ -197,4 +196,13 @@ type PropertyAssignment struct {
 
 func (p *PropertyAssignment) String() string {
 	return fmt.Sprintf("%s.%s = %s", p.Object.String(), p.Property.Lexeme, p.Value.String())
+}
+
+type ClassStmt struct {
+	Name token.Token
+}
+
+func (c *ClassStmt) String() string {
+	fmt.Println("ss")
+	return fmt.Sprintf("class %s {}", c.Name.Lexeme)
 }
