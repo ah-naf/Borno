@@ -382,3 +382,61 @@ func tokenTypeToLexeme(tokenType token.TokenType) string {
 		return ""
 	}
 }
+
+
+func TestClassInstantiation(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Simple instance",
+			input:    "class Spaceship {}; ধরি falcon = Spaceship(); falcon;",
+			expected: "Spaceship instance",
+		},
+		{
+			name:     "Multiple instances",
+			input:    "class Robot {}; ধরি r1 = Robot(); ধরি r2 = Robot(); r1; r2;",
+			expected: "Robot instance",
+		},
+		{
+			name:     "Instance from function",
+			input:    "class Wizard {}; class Dragon {}; ফাংশন createCharacters() { ধরি merlin = Wizard(); ধরি smaug = Dragon(); ফেরত merlin; } ধরি mainCharacter = createCharacters(); mainCharacter;",
+			expected: "Wizard instance",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			utils.HadError = false
+			utils.HadRuntimeError = false
+
+			scanner := lexer.NewScanner([]rune(tt.input))
+			tokens := scanner.ScanTokens()
+
+			parser := parser.NewParser(tokens)
+			stmts, err := parser.Parse()
+			if err != nil || utils.HadError {
+				t.Fatalf("Parser error: %v", err)
+			}
+
+			interp := NewInterpreter()
+			results := interp.Interpret(stmts, false)
+
+			if utils.HadRuntimeError {
+				t.Fatalf("Runtime error while executing %s", tt.name)
+			}
+
+			if len(results) == 0 {
+				t.Fatalf("No result returned")
+			}
+
+			result := results[len(results)-1]
+			str := stringify(result)
+			if str != tt.expected {
+				t.Fatalf("Expected %s, got %s", tt.expected, str)
+			}
+		})
+	}
+}

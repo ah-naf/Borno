@@ -397,6 +397,11 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 		return nil, err
 	}
 
+	_, err = p.consume(token.SEMICOLON, "Expect ';' after class declaration.")
+	if err != nil {
+		return nil, err
+	}
+
 	return &ast.ClassStmt{Name: name}, nil
 }
 
