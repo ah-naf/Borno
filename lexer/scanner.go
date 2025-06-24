@@ -24,6 +24,7 @@ var keywords = map[string]token.TokenType{
 	"সত্য":       token.TRUE,
 	"true":       token.TRUE,
 	"মিথ্যা":     token.FALSE,
+	"this":       token.THIS,
 	"false":      token.FALSE,
 	"nil":        token.NIL,
 	"দেখাও":      token.PRINT,

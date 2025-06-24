@@ -72,6 +72,15 @@ func (i *Identifier) String() string {
 	return i.Name.Lexeme
 }
 
+type This struct {
+	Keyword token.Token
+	Line    int
+}
+
+func (t *This) String() string {
+	return "this"
+}
+
 type Logical struct {
 	Left     Expr
 	Operator token.Token

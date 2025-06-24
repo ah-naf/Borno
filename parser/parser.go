@@ -811,6 +811,10 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.Literal{Value: nil, Line: p.previous().Line}, nil
 	}
 
+	if p.match(token.THIS) {
+		return &ast.This{Keyword: p.previous(), Line: p.previous().Line}, nil
+	}
+
 	if p.match(token.NUMBER, token.STRING) {
 		return &ast.Literal{Value: p.previous().Literal, Line: p.previous().Line}, nil
 	}

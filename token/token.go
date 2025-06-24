@@ -61,6 +61,7 @@ const (
 	PRINT
 	RETURN
 	TRUE
+	THIS
 	VAR
 	WHILE
 

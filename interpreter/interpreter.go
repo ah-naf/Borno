@@ -432,6 +432,14 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		}
 		return val, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
+	case *ast.This:
+		val, err := env.Get("this")
+		if err != nil {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Can't use 'this' outside of a class.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+		return val, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
 	case *ast.BlockStmt:
 		newEnv := environment.NewEnvironmentWithParent(env)
 		for _, statement := range e.Block {
@@ -884,6 +892,8 @@ func getLineNumber(expr ast.Expr) int {
 		return e.Line
 	case *ast.VarStmt:
 		return e.Name.Line
+	case *ast.This:
+		return e.Line
 	case *ast.Identifier:
 		return e.Line
 	case *ast.BreakStmt:

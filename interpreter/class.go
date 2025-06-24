@@ -48,7 +48,7 @@ func (i *Instance) Get(name token.Token) (interface{}, error) {
 		return value, nil
 	}
 	if method, ok := i.Class.Methods[name.Lexeme]; ok {
-		return method, nil
+		return method.Bind(i), nil
 	}
 	return nil, fmt.Errorf("Undefined property '%s'.", name.Lexeme)
 }

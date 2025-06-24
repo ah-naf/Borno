@@ -19,6 +19,12 @@ func NewFunction(declaration *ast.FunctionStmt, closure *environment.Environment
 	return &Function{Declaration: declaration, Closure: closure}
 }
 
+func (f *Function) Bind(instance *Instance) *Function {
+	env := environment.NewEnvironmentWithParent(f.Closure)
+	env.Define("this", instance)
+	return &Function{Declaration: f.Declaration, Closure: env}
+}
+
 func (f *Function) Call(i *Interpreter, arguments []interface{}) (interface{}, error) {
 	functionEnv := environment.NewEnvironmentWithParent(f.Closure)
 

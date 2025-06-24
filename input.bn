@@ -1,7 +1,9 @@
-class Foo {
-  returnSelf() {
-    return Foo;
+class Calculator {
+  add(a, b) {
+    return a + b + this.memory;
   }
 };
 
-print Foo().returnSelf();
+var calc = Calculator();
+calc.memory = 82;
+print calc.add(92, 1);

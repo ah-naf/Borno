@@ -735,3 +735,144 @@ performHeroics(superman, heroClass);
 		})
 	}
 }
+
+func TestThisKeyword(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []interface{}
+	}{
+		{
+			name: "Basic this",
+			input: `
+class Spaceship {
+  identify() {
+    print this;
+  }
+};
+
+Spaceship().identify();
+`,
+			expected: []interface{}{"Spaceship instance"},
+		},
+		{
+			name: "Instance property access",
+			input: `
+class Calculator {
+  add(a, b) {
+    return a + b + this.memory;
+  }
+};
+
+var calc = Calculator();
+calc.memory = 82;
+print calc.add(92, 1);
+`,
+			expected: []interface{}{int64(175)},
+		},
+		{
+			name: "Method binding",
+			input: `
+class Animal {
+  makeSound() {
+    print this.sound;
+  }
+  identify() {
+    print this.species;
+  }
+};
+
+var dog = Animal();
+dog.sound = "Woof";
+dog.species = "Dog";
+
+var cat = Animal();
+cat.sound = "Meow";
+cat.species = "Cat";
+
+cat.makeSound = dog.makeSound;
+dog.identify = cat.identify;
+
+cat.makeSound();
+dog.identify();
+`,
+			expected: []interface{}{"Woof", "Cat"},
+		},
+		{
+			name: "Nested function this",
+			input: `
+class Wizard {
+  getSpellCaster() {
+    fun castSpell() {
+      print this;
+      print "Casting spell as " + this.name;
+    }
+
+    return castSpell;
+  }
+};
+
+var wizard = Wizard();
+wizard.name = "Merlin";
+wizard.getSpellCaster()();
+`,
+			expected: []interface{}{"Wizard instance", "Casting spell as Merlin"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			utils.HadError = false
+			utils.HadRuntimeError = false
+
+			scanner := lexer.NewScanner([]rune(tt.input))
+			tokens := scanner.ScanTokens()
+
+			parser := parser.NewParser(tokens)
+			stmts, err := parser.Parse()
+			if err != nil || utils.HadError {
+				t.Fatalf("Parser error: %v", err)
+			}
+
+			oldStdout := os.Stdout
+			r, w, err := os.Pipe()
+			if err != nil {
+				t.Fatalf("Failed to create pipe: %v", err)
+			}
+			os.Stdout = w
+
+			interp := NewInterpreter()
+			_ = interp.Interpret(stmts, false)
+
+			w.Close()
+			var buf bytes.Buffer
+			_, _ = io.Copy(&buf, r)
+			os.Stdout = oldStdout
+
+			if utils.HadRuntimeError {
+				t.Fatalf("Runtime error while executing %s", tt.name)
+			}
+
+			output := strings.TrimSpace(buf.String())
+			lines := []string{}
+			scannerOut := bufio.NewScanner(strings.NewReader(output))
+			for scannerOut.Scan() {
+				lines = append(lines, scannerOut.Text())
+			}
+			if err := scannerOut.Err(); err != nil {
+				t.Fatalf("Error reading output: %v", err)
+			}
+
+			if len(lines) != len(tt.expected) {
+				t.Fatalf("Expected %d lines of output, got %d: %v", len(tt.expected), len(lines), lines)
+			}
+
+			for i, exp := range tt.expected {
+				expStr := fmt.Sprint(exp)
+				if lines[i] != expStr {
+					t.Errorf("line %d: expected %q, got %q", i+1, expStr, lines[i])
+				}
+			}
+		})
+	}
+}
