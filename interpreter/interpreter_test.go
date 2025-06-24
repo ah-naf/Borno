@@ -876,3 +876,90 @@ wizard.getSpellCaster()();
 		})
 	}
 }
+
+func TestInvalidThisUsage(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		errorMsg string
+	}{
+		{
+			name: "Top level this",
+			input: `
+print this;
+`,
+			errorMsg: "Can't use 'this' outside of a class.",
+		},
+		{
+			name: "This in function",
+			input: `
+fun notAMethod() {
+  print this;
+}
+notAMethod();
+`,
+			errorMsg: "Can't use 'this' outside of a class.",
+		},
+		{
+			name: "Call this as function",
+			input: `
+class Person {
+  sayName() {
+    print this();
+  }
+};
+Person().sayName();
+`,
+			errorMsg: "Can only call functions and classes.",
+		},
+		{
+			name: "Invalid property on this",
+			input: `
+class Confused {
+  method() {
+    fun inner(instance) {
+      var feeling = "confused";
+      print this.feeling;
+    }
+    return inner;
+  }
+};
+
+var instance = Confused();
+var m = instance.method();
+m(instance);
+`,
+			errorMsg: "Undefined property 'feeling'.",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			utils.HadError = false
+			utils.HadRuntimeError = false
+
+			scanner := lexer.NewScanner([]rune(tt.input))
+			tokens := scanner.ScanTokens()
+
+			parser := parser.NewParser(tokens)
+			stmts, err := parser.Parse()
+			if err != nil || utils.HadError {
+				t.Fatalf("Parser error: %v", err)
+			}
+
+			capturedErr := CaptureStderr(func() {
+				interp := NewInterpreter()
+				_ = interp.Interpret(stmts, false)
+			})
+
+			capturedErr = strings.Split(capturedErr, "\n")[0]
+
+			if !utils.HadRuntimeError {
+				t.Fatalf("Expected runtime error for %s", tt.name)
+			}
+			if capturedErr != tt.errorMsg {
+				t.Fatalf("Expected error %q, got %q", tt.errorMsg, capturedErr)
+			}
+		})
+	}
+}

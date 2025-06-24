@@ -286,7 +286,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		// Ensure the callee is a callable function
 		function, ok := callee.(Callable)
 		if !ok {
-			utils.RuntimeError(e.Paren, "Can only call functions.")
+			utils.RuntimeError(e.Paren, "Can only call functions and classes.")
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
 
