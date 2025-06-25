@@ -257,6 +257,9 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		methods := make(map[string]*Function)
 		for _, m := range e.Methods {
 			fn := NewFunction(m, environment.NewEnvironmentWithParent(env))
+			if m.Name.Lexeme == "init" {
+				fn.isInitializer = true
+			}
 			methods[m.Name.Lexeme] = fn
 		}
 		class := NewClass(e.Name.Lexeme, methods)

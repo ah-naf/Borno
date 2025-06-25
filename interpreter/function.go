@@ -11,8 +11,9 @@ type Callable interface {
 }
 
 type Function struct {
-	Declaration *ast.FunctionStmt
-	Closure     *environment.Environment
+	Declaration   *ast.FunctionStmt
+	Closure       *environment.Environment
+	isInitializer bool
 }
 
 func NewFunction(declaration *ast.FunctionStmt, closure *environment.Environment) *Function {
@@ -22,7 +23,7 @@ func NewFunction(declaration *ast.FunctionStmt, closure *environment.Environment
 func (f *Function) Bind(instance *Instance) *Function {
 	env := environment.NewEnvironmentWithParent(f.Closure)
 	env.Define("this", instance)
-	return &Function{Declaration: f.Declaration, Closure: env}
+	return &Function{Declaration: f.Declaration, Closure: env, isInitializer: f.isInitializer}
 }
 
 func (f *Function) Call(i *Interpreter, arguments []interface{}) (interface{}, error) {
@@ -34,16 +35,22 @@ func (f *Function) Call(i *Interpreter, arguments []interface{}) (interface{}, e
 		functionEnv.Define(param.Lexeme, arguments[ind])
 	}
 
+	var ret interface{}
 	for _, statment := range f.Declaration.Body {
 		_, signal := i.eval(statment, functionEnv, false)
 		if signal.Type == ControlFlowReturn {
-			return signal.Value, nil
+			ret = signal.Value
+			break
 		}
 		if signal.Type != ControlFlowNone {
 			return nil, nil // You can later add support for return values.
 		}
 	}
-	return nil, nil
+	if f.isInitializer {
+		val, _ := functionEnv.Get("this")
+		return val, nil
+	}
+	return ret, nil
 }
 
 func (f *Function) Arity() int {

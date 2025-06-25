@@ -8,7 +8,7 @@ import (
 
 // Class represents a user-defined class.
 type Class struct {
-	Name string
+	Name    string
 	Methods map[string]*Function
 }
 
@@ -22,6 +22,9 @@ func (c *Class) String() string {
 
 // Arity returns the number of arguments required for instantiation.
 func (c *Class) Arity() int {
+	if initializer, ok := c.Methods["init"]; ok {
+		return initializer.Arity()
+	}
 	return 0
 }
 
@@ -60,5 +63,9 @@ func (i *Instance) Set(name token.Token, value interface{}) {
 
 // Call creates a new instance of the class.
 func (c *Class) Call(i *Interpreter, arguments []interface{}) (interface{}, error) {
-	return NewInstance(c), nil
+	instance := NewInstance(c)
+	if initializer, ok := c.Methods["init"]; ok {
+		_, _ = initializer.Bind(instance).Call(i, arguments)
+	}
+	return instance, nil
 }

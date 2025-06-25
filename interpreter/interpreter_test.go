@@ -963,3 +963,114 @@ m(instance);
 		})
 	}
 }
+
+func TestConstructors(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name: "Default properties",
+			input: `
+class Default {
+  init() {
+    this.x = "bar";
+    this.y = 91;
+  }
+};
+print Default().x;
+print Default().y;
+`,
+			expected: []string{"bar", "91"},
+		},
+		{
+			name: "Constructor parameters",
+			input: `
+class Robot {
+  init(model, function) {
+    this.model = model;
+    this.function = function;
+  }
+};
+print Robot("R2-D2", "Astromech").model;
+`,
+			expected: []string{"R2-D2"},
+		},
+		{
+			name: "Initializer chaining",
+			input: `
+class Counter {
+  init(startValue) {
+    if (startValue < 0) {
+      print "startValue can't be negative";
+      this.count = 0;
+    } else {
+      this.count = startValue;
+    }
+  }
+};
+
+var instance = Counter(-52);
+print instance.count;
+print instance.init(52).count;
+`,
+			expected: []string{"startValue can't be negative", "0", "52"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			utils.HadError = false
+			utils.HadRuntimeError = false
+
+			scanner := lexer.NewScanner([]rune(tt.input))
+			tokens := scanner.ScanTokens()
+
+			parser := parser.NewParser(tokens)
+			stmts, err := parser.Parse()
+			if err != nil || utils.HadError {
+				t.Fatalf("Parser error: %v", err)
+			}
+
+			oldStdout := os.Stdout
+			r, w, err := os.Pipe()
+			if err != nil {
+				t.Fatalf("Failed to create pipe: %v", err)
+			}
+			os.Stdout = w
+
+			interp := NewInterpreter()
+			_ = interp.Interpret(stmts, false)
+
+			w.Close()
+			var buf bytes.Buffer
+			_, _ = io.Copy(&buf, r)
+			os.Stdout = oldStdout
+
+			if utils.HadRuntimeError {
+				t.Fatalf("Runtime error while executing %s", tt.name)
+			}
+
+			output := strings.TrimSpace(buf.String())
+			lines := []string{}
+			scannerOut := bufio.NewScanner(strings.NewReader(output))
+			for scannerOut.Scan() {
+				lines = append(lines, scannerOut.Text())
+			}
+			if err := scannerOut.Err(); err != nil {
+				t.Fatalf("Error reading output: %v", err)
+			}
+
+			if len(lines) != len(tt.expected) {
+				t.Fatalf("Expected %d lines of output, got %d: %v", len(tt.expected), len(lines), lines)
+			}
+
+			for i, exp := range tt.expected {
+				if lines[i] != exp {
+					t.Errorf("line %d: expected %q, got %q", i+1, exp, lines[i])
+				}
+			}
+		})
+	}
+}
