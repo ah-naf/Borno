@@ -29,6 +29,14 @@ var reservedIdentifiers = map[string]bool{
 	"ইনপুট":        true,
 }
 
+type classType int
+
+const (
+	classNone classType = iota
+	classClass
+	classSubclass
+)
+
 type ParseError struct {
 	message string
 }
@@ -40,11 +48,13 @@ func (e ParseError) Error() string {
 type Parser struct {
 	tokens  []token.Token
 	current int
+	currentClass classType
 }
 
 func NewParser(tokens []token.Token) *Parser {
 	return &Parser{
 		tokens: tokens,
+		currentClass: classNone,
 	}
 }
 
@@ -402,6 +412,14 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 		superclass = &ast.Identifier{Name: superName, Line: superName.Line}
 	}
 
+
+	enclosing := p.currentClass
+	if superclass != nil {
+		p.currentClass = classSubclass
+	} else {
+		p.currentClass = classClass
+	}
+
 	_, err = p.consume(token.LEFT_BRACE, "Expect '{' before class body.")
 	if err != nil {
 		return nil, err
@@ -425,6 +443,8 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	p.currentClass = enclosing
 
 	return &ast.ClassStmt{Name: name, Superclass: superclass, Methods: methods}, nil
 }
@@ -832,6 +852,13 @@ func (p *Parser) primary() (ast.Expr, error) {
 
 	if p.match(token.SUPER) {
 		keyword := p.previous()
+		
+		if p.currentClass == classNone {
+			return nil, p.error(keyword, "Can't use 'super' outside of a class.")
+		} else if p.currentClass != classSubclass {
+			return nil, p.error(keyword, "Can't use 'super' in a class with no superclass.")
+		}
+
 		_, err := p.consume(token.DOT, "Expect '.' after 'super'.")
 		if err != nil {
 			return nil, err

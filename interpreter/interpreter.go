@@ -474,13 +474,13 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 	case *ast.Super:
 		_, err := env.Get("this")
 		if err != nil {
-			utils.RuntimeError(token.Token{Line: e.Line}, "Can't use 'super' outside of a class.")
+			utils.GlobalErrorToken(token.Token{Line: e.Line, Lexeme: "super"}, "Can't use 'super' outside of a class.")
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
 
 		val, err := env.Get("super")
 		if err != nil {
-			utils.RuntimeError(token.Token{Line: e.Line}, "Can't use 'super' in a class with no superclass.")
+			utils.GlobalErrorToken(token.Token{Line: e.Line, Lexeme: "super"}, "Can't use 'super' in a class with no superclass.")
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
 
