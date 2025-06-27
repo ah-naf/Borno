@@ -62,6 +62,7 @@ const (
 	RETURN
 	TRUE
 	THIS
+	SUPER
 	VAR
 	WHILE
 

@@ -1,1 +1,22 @@
-class Foo < Foo {};
+class Base {
+  method() {
+    print "Base.method()";
+  }
+};
+
+class Parent < Base {
+  method() {
+    super.method();
+  }
+};
+
+class Child < Parent {
+  method() {
+    super.method();
+  }
+};
+
+var parent = Parent();
+parent.method();
+var child = Child();
+child.method();

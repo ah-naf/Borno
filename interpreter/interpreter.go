@@ -268,6 +268,14 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			}
 		}
 
+		env.Define(e.Name.Lexeme, nil)
+
+		enclosing := env
+		if superclass != nil {
+			env = environment.NewEnvironmentWithParent(env)
+			env.Define("super", superclass)
+		}
+
 		methods := make(map[string]*Function)
 		for _, m := range e.Methods {
 			fn := NewFunction(m, environment.NewEnvironmentWithParent(env))
@@ -276,8 +284,14 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			}
 			methods[m.Name.Lexeme] = fn
 		}
+
 		class := NewClass(e.Name.Lexeme, superclass, methods)
-		env.Define(e.Name.Lexeme, class)
+
+		if superclass != nil {
+			env = env.Parent
+		}
+		enclosing.Assign(e.Name, class)
+
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.Return:
@@ -456,6 +470,32 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 		}
 		return val, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+
+	case *ast.Super:
+		_, err := env.Get("this")
+		if err != nil {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Can't use 'super' outside of a class.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		val, err := env.Get("super")
+		if err != nil {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Can't use 'super' in a class with no superclass.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		superclass, _ := val.(*Class)
+
+		thisVal, _ := env.Get("this")
+		instance := thisVal.(*Instance)
+
+		method := superclass.FindMethod(e.Method.Lexeme)
+		if method == nil {
+			utils.RuntimeError(token.Token{Line: e.Line}, "Undefined property '"+e.Method.Lexeme+"'.")
+			return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+		}
+
+		return method.Bind(instance), &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.BlockStmt:
 		newEnv := environment.NewEnvironmentWithParent(env)
@@ -910,6 +950,8 @@ func getLineNumber(expr ast.Expr) int {
 	case *ast.VarStmt:
 		return e.Name.Line
 	case *ast.This:
+		return e.Line
+	case *ast.Super:
 		return e.Line
 	case *ast.Identifier:
 		return e.Line

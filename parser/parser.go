@@ -830,6 +830,19 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.This{Keyword: p.previous(), Line: p.previous().Line}, nil
 	}
 
+	if p.match(token.SUPER) {
+		keyword := p.previous()
+		_, err := p.consume(token.DOT, "Expect '.' after 'super'.")
+		if err != nil {
+			return nil, err
+		}
+		method, err := p.consume(token.IDENTIFIER, "Expect superclass method name.")
+		if err != nil {
+			return nil, err
+		}
+		return &ast.Super{Keyword: keyword, Method: method, Line: keyword.Line}, nil
+	}
+
 	if p.match(token.NUMBER, token.STRING) {
 		return &ast.Literal{Value: p.previous().Literal, Line: p.previous().Line}, nil
 	}

@@ -81,6 +81,16 @@ func (t *This) String() string {
 	return "this"
 }
 
+type Super struct {
+	Keyword token.Token
+	Method  token.Token
+	Line    int
+}
+
+func (s *Super) String() string {
+	return fmt.Sprintf("super.%s", s.Method.Lexeme)
+}
+
 type Logical struct {
 	Left     Expr
 	Operator token.Token
