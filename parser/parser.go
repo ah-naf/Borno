@@ -387,6 +387,18 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 		return nil, p.error(name, fmt.Sprintf("'%s' is a reserved identifier and cannot be used as a class name.", name.Lexeme))
 	}
 
+	var superclass *ast.Identifier
+	if p.match(token.LESS) {
+		superName, err := p.consume(token.IDENTIFIER, "Expect superclass name.")
+		if err != nil {
+			return nil, err
+		}
+		if _, isReserved := reservedIdentifiers[superName.Lexeme]; isReserved {
+			return nil, p.error(superName, fmt.Sprintf("'%s' is a reserved identifier and cannot be used as a superclass name.", superName.Lexeme))
+		}
+		superclass = &ast.Identifier{Name: superName, Line: superName.Line}
+	}
+
 	_, err = p.consume(token.LEFT_BRACE, "Expect '{' before class body.")
 	if err != nil {
 		return nil, err
@@ -411,7 +423,7 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	return &ast.ClassStmt{Name: name, Methods: methods}, nil
+	return &ast.ClassStmt{Name: name, Superclass: superclass, Methods: methods}, nil
 }
 
 func (p *Parser) block() ([]ast.Stmt, error) {

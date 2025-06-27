@@ -8,12 +8,13 @@ import (
 
 // Class represents a user-defined class.
 type Class struct {
-	Name    string
-	Methods map[string]*Function
+	Name       string
+	Superclass *Class
+	Methods    map[string]*Function
 }
 
-func NewClass(name string, methods map[string]*Function) *Class {
-	return &Class{Name: name, Methods: methods}
+func NewClass(name string, superclass *Class, methods map[string]*Function) *Class {
+	return &Class{Name: name, Superclass: superclass, Methods: methods}
 }
 
 func (c *Class) String() string {
@@ -22,10 +23,20 @@ func (c *Class) String() string {
 
 // Arity returns the number of arguments required for instantiation.
 func (c *Class) Arity() int {
-	if initializer, ok := c.Methods["init"]; ok {
+	if initializer := c.FindMethod("init"); initializer != nil {
 		return initializer.Arity()
 	}
 	return 0
+}
+
+func (c *Class) FindMethod(name string) *Function {
+	if method, ok := c.Methods[name]; ok {
+		return method
+	}
+	if c.Superclass != nil {
+		return c.Superclass.FindMethod(name)
+	}
+	return nil
 }
 
 type Instance struct {
@@ -50,7 +61,7 @@ func (i *Instance) Get(name token.Token) (interface{}, error) {
 	if value, ok := i.Fields[name.Lexeme]; ok {
 		return value, nil
 	}
-	if method, ok := i.Class.Methods[name.Lexeme]; ok {
+	if method := i.Class.FindMethod(name.Lexeme); method != nil {
 		return method.Bind(i), nil
 	}
 	return nil, fmt.Errorf("Undefined property '%s'.", name.Lexeme)
@@ -64,7 +75,7 @@ func (i *Instance) Set(name token.Token, value interface{}) {
 // Call creates a new instance of the class.
 func (c *Class) Call(i *Interpreter, arguments []interface{}) (interface{}, error) {
 	instance := NewInstance(c)
-	if initializer, ok := c.Methods["init"]; ok {
+	if initializer := c.FindMethod("init"); initializer != nil {
 		_, _ = initializer.Bind(instance).Call(i, arguments)
 	}
 	return instance, nil

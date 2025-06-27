@@ -254,6 +254,20 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 
 	case *ast.ClassStmt:
+		var superclass *Class
+		if e.Superclass != nil {
+			sc, signal := i.eval(e.Superclass, env, isRepl)
+			if signal.Type != ControlFlowNone {
+				return nil, signal
+			}
+			var ok bool
+			superclass, ok = sc.(*Class)
+			if !ok {
+				utils.RuntimeError(token.Token{Line: e.Superclass.Line}, "Superclass must be a class.")
+				return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
+			}
+		}
+
 		methods := make(map[string]*Function)
 		for _, m := range e.Methods {
 			fn := NewFunction(m, environment.NewEnvironmentWithParent(env))
@@ -262,7 +276,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			}
 			methods[m.Name.Lexeme] = fn
 		}
-		class := NewClass(e.Name.Lexeme, methods)
+		class := NewClass(e.Name.Lexeme, superclass, methods)
 		env.Define(e.Name.Lexeme, class)
 		return nil, &ControlFlowSignal{Type: ControlFlowNone, LineNumber: 0}
 

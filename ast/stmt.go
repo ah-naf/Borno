@@ -200,6 +200,7 @@ func (p *PropertyAssignment) String() string {
 
 type ClassStmt struct {
 	Name    token.Token
+	Superclass *Identifier
 	Methods []*FunctionStmt
 }
 
@@ -207,6 +208,9 @@ func (c *ClassStmt) String() string {
 	methodsStr := ""
 	for _, m := range c.Methods {
 		methodsStr += m.String() + "\n"
+	}
+	if c.Superclass != nil {
+		return fmt.Sprintf("class %s < %s {\n%s}", c.Name.Lexeme, c.Superclass.Name.Lexeme, methodsStr)
 	}
 	return fmt.Sprintf("class %s {\n%s}", c.Name.Lexeme, methodsStr)
 }

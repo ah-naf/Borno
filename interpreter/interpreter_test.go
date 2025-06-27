@@ -1212,3 +1212,96 @@ Foo();
 		})
 	}
 }
+
+
+func TestClassInheritance(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name: "Basic inheritance",
+			input: `
+class Doughnut {};
+class BostonCream < Doughnut {};
+
+print Doughnut();
+print BostonCream();
+`,
+			expected: []string{"Doughnut instance", "BostonCream instance"},
+		},
+		{
+			name: "Multi level inheritance",
+			input: `
+class Vehicle {};
+class Car < Vehicle {};
+class Sedan < Car {};
+
+print Vehicle();
+print Car();
+print Sedan();
+{
+  class Truck < Vehicle {};
+  print Truck();
+}
+`,
+			expected: []string{"Vehicle instance", "Car instance", "Sedan instance", "Truck instance"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			utils.HadError = false
+			utils.HadRuntimeError = false
+
+			scanner := lexer.NewScanner([]rune(tt.input))
+			tokens := scanner.ScanTokens()
+
+			parser := parser.NewParser(tokens)
+			stmts, err := parser.Parse()
+			if err != nil || utils.HadError {
+				t.Fatalf("Parser error: %v", err)
+			}
+
+			oldStdout := os.Stdout
+			r, w, err := os.Pipe()
+			if err != nil {
+				t.Fatalf("Failed to create pipe: %v", err)
+			}
+			os.Stdout = w
+
+			interp := NewInterpreter()
+			_ = interp.Interpret(stmts, false)
+
+			w.Close()
+			var buf bytes.Buffer
+			_, _ = io.Copy(&buf, r)
+			os.Stdout = oldStdout
+
+			if utils.HadRuntimeError {
+				t.Fatalf("Runtime error while executing %s", tt.name)
+			}
+
+			output := strings.TrimSpace(buf.String())
+			lines := []string{}
+			scannerOut := bufio.NewScanner(strings.NewReader(output))
+			for scannerOut.Scan() {
+				lines = append(lines, scannerOut.Text())
+			}
+			if err := scannerOut.Err(); err != nil {
+				t.Fatalf("Error reading output: %v", err)
+			}
+
+			if len(lines) != len(tt.expected) {
+				t.Fatalf("Expected %d lines of output, got %d: %v", len(tt.expected), len(lines), lines)
+			}
+
+			for i, exp := range tt.expected {
+				if lines[i] != exp {
+					t.Errorf("line %d: expected %q, got %q", i+1, exp, lines[i])
+				}
+			}
+		})
+	}
+}
