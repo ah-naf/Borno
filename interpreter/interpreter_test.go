@@ -1213,7 +1213,6 @@ Foo();
 	}
 }
 
-
 func TestClassInheritance(t *testing.T) {
 	tests := []struct {
 		name     string

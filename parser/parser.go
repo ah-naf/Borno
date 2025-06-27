@@ -393,6 +393,9 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 		if err != nil {
 			return nil, err
 		}
+		if superName.Lexeme == name.Lexeme {
+			return nil, p.error(superName, "A class can't inherit from itself.")
+		}
 		if _, isReserved := reservedIdentifiers[superName.Lexeme]; isReserved {
 			return nil, p.error(superName, fmt.Sprintf("'%s' is a reserved identifier and cannot be used as a superclass name.", superName.Lexeme))
 		}
