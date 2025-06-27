@@ -275,7 +275,7 @@ func (i *Interpreter) eval(expr ast.Expr, env *environment.Environment, isRepl b
 			}
 			value = v
 		}
-		return nil, &ControlFlowSignal{Type: ControlFlowReturn, Value: value}
+		return nil, &ControlFlowSignal{Type: ControlFlowReturn, LineNumber: e.Keyword.Line, Value: value}
 
 	case *ast.Call:
 		// Step 1: Evaluate the callee (the thing being called)

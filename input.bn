@@ -1,9 +1,32 @@
-class Calculator {
-  add(a, b) {
-    return a + b + this.memory;
+class Superhero {
+  useSpecialPower(hero) {
+    print "Using power: " + hero.specialPower;
+  }
+
+  hasSpecialPower(hero) {
+    return hero.specialPower;
+  }
+
+  giveSpecialPower(hero, power) {
+    hero.specialPower = power;
   }
 };
 
-var calc = Calculator();
-calc.memory = 82;
-print calc.add(92, 1);
+fun performHeroics(hero, superheroClass) {
+  if (superheroClass.hasSpecialPower(hero)) {
+    superheroClass.useSpecialPower(hero);
+  } else {
+    print "No special power available";
+  }
+}
+
+var superman = Superhero();
+var heroClass = Superhero();
+
+if (true) {
+  heroClass.giveSpecialPower(superman, "Flight");
+} else {
+  heroClass.giveSpecialPower(superman, "Strength");
+}
+
+performHeroics(superman, heroClass);

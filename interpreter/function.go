@@ -3,6 +3,8 @@ package interpreter
 import (
 	"github.com/ah-naf/borno/ast"
 	"github.com/ah-naf/borno/environment"
+	"github.com/ah-naf/borno/token"
+	"github.com/ah-naf/borno/utils"
 )
 
 type Callable interface {
@@ -36,10 +38,12 @@ func (f *Function) Call(i *Interpreter, arguments []interface{}) (interface{}, e
 	}
 
 	var ret interface{}
+	var retSignal *ControlFlowSignal
 	for _, statment := range f.Declaration.Body {
 		_, signal := i.eval(statment, functionEnv, false)
 		if signal.Type == ControlFlowReturn {
 			ret = signal.Value
+			retSignal = signal
 			break
 		}
 		if signal.Type != ControlFlowNone {
@@ -47,6 +51,11 @@ func (f *Function) Call(i *Interpreter, arguments []interface{}) (interface{}, e
 		}
 	}
 	if f.isInitializer {
+		if retSignal != nil && retSignal.Value != nil {
+			tok := token.Token{Type: token.RETURN, Lexeme: "return", Line: retSignal.LineNumber}
+			utils.GlobalErrorToken(tok, "Can't return a value from an initializer.")
+			return nil, nil
+		}
 		val, _ := functionEnv.Get("this")
 		return val, nil
 	}

@@ -1074,3 +1074,141 @@ print instance.init(52).count;
 		})
 	}
 }
+
+func TestReturnInConstructors(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+		errorMsg string
+	}{
+		{
+			name: "Return without value",
+			input: `
+class Person {
+  init() {
+    print "world";
+    return;
+  }
+};
+
+Person();
+`,
+			expected: []string{"world"},
+		},
+		{
+			name: "Return this value",
+			input: `
+class ThingDefault {
+  init() {
+    this.x = "foo";
+    this.y = 42;
+    return this;
+  }
+};
+var out = ThingDefault();
+print out;
+`,
+			errorMsg: "[line 6] Error at 'return': Can't return a value from an initializer.",
+		},
+		{
+			name: "Return string value",
+			input: `
+class Foo {
+  init() {
+    return "something else";
+  }
+};
+
+Foo();
+`,
+			errorMsg: "[line 4] Error at 'return': Can't return a value from an initializer.",
+		},
+		{
+			name: "Return call",
+			input: `
+class Foo {
+  init() {
+    return this.callback();
+  }
+
+  callback() {
+    return "callback";
+  }
+};
+
+Foo();
+`,
+			errorMsg: "[line 4] Error at 'return': Can't return a value from an initializer.",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			utils.HadError = false
+			utils.HadRuntimeError = false
+
+			scanner := lexer.NewScanner([]rune(tt.input))
+			tokens := scanner.ScanTokens()
+
+			parser := parser.NewParser(tokens)
+			stmts, err := parser.Parse()
+			if err != nil || utils.HadError {
+				t.Fatalf("Parser error: %v", err)
+			}
+
+			oldStdout := os.Stdout
+			r, w, err := os.Pipe()
+			if err != nil {
+				t.Fatalf("Failed to create pipe: %v", err)
+			}
+			os.Stdout = w
+
+			capturedErr := CaptureStderr(func() {
+				interp := NewInterpreter()
+				_ = interp.Interpret(stmts, false)
+			})
+
+			w.Close()
+			var buf bytes.Buffer
+			_, _ = io.Copy(&buf, r)
+			os.Stdout = oldStdout
+
+			capturedErr = strings.Split(capturedErr, "\n")[0]
+
+			if tt.errorMsg != "" {
+				if !utils.HadError {
+					t.Fatalf("Expected compile error for %s", tt.name)
+				}
+				if capturedErr != tt.errorMsg {
+					t.Fatalf("Expected error %q, got %q", tt.errorMsg, capturedErr)
+				}
+				return
+			}
+
+			if utils.HadRuntimeError || utils.HadError {
+				t.Fatalf("Unexpected error for %s: %s", tt.name, capturedErr)
+			}
+
+			output := strings.TrimSpace(buf.String())
+			lines := []string{}
+			scannerOut := bufio.NewScanner(strings.NewReader(output))
+			for scannerOut.Scan() {
+				lines = append(lines, scannerOut.Text())
+			}
+			if err := scannerOut.Err(); err != nil {
+				t.Fatalf("Error reading output: %v", err)
+			}
+
+			if len(lines) != len(tt.expected) {
+				t.Fatalf("Expected %d lines of output, got %d: %v", len(tt.expected), len(lines), lines)
+			}
+
+			for i, exp := range tt.expected {
+				if lines[i] != exp {
+					t.Errorf("line %d: expected %q, got %q", i+1, exp, lines[i])
+				}
+			}
+		})
+	}
+}
