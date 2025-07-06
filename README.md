@@ -19,7 +19,7 @@ Borno is a dynamically typed **Bangla-based** programming language that allows d
     - [Array \& Object Demo](#array--object-demo)
     - [Control Flow Demo](#control-flow-demo)
     - [Closures \& Functions](#closures--functions)
-
+    - [Classes \& Inheritance Demo](#classes--inheritance-demo)
 ---
 
 ## Features
@@ -29,6 +29,7 @@ Borno is a dynamically typed **Bangla-based** programming language that allows d
 - **Functions**: Define custom functions with parameters, closures, and return statements.
 - **Built-In Functions**: Access native functions like input, array manipulation (append, remove), math utilities (sqrt, abs, sin, etc.).
 - **Bangla Digits**: Parse and convert Bangla digits (০, ১, ২, ৩, ...) to ASCII under the hood.
+- **Classes & Inheritance**: Create classes with the `নকশা` keyword and build subclasses using inheritance.
 
 ---
 
@@ -151,22 +152,25 @@ property       → IDENTIFIER ":" expression ;
 
 Here are the **Bangla keywords** Borno uses:
 
-| Keyword         | Description                |
-|-----------------|----------------------------|
-| `ফাংশন`         | Declares a function.      |
-| `ধরি`           | Declares a variable.      |
-| `ফর`            | For-loop.                 |
-| `যদি`           | If-statement.             |
-| `নাহয়`          | Else-statement.           |
-| `যতক্ষণ`       | While-loop.               |
-| `সত্য`          | Boolean true.             |
-| `মিথ্যা`        | Boolean false.            |
-| `দেখাও`         | Print statement.          |
-| `ফেরত`          | Return from function.     |
-| `থামো`          | Break from loop.          |
-| `চালিয়ে_যাও`    | Continue loop.            |
-| `এবং`           | Logical AND (&&).         |
-| `বা`            | Logical OR (&#124;&#124;).|
+| Keyword      | Description                |
+| ------------ | -------------------------- |
+| `ফাংশন`      | Declares a function.       |
+| `ধরি`        | Declares a variable.       |
+| `ফর`         | For-loop.                  |
+| `যদি`        | If-statement.              |
+| `নাহয়`       | Else-statement.            |
+| `যতক্ষণ`     | While-loop.                |
+| `সত্য`       | Boolean true.              |
+| `মিথ্যা`     | Boolean false.             |
+| `দেখাও`      | Print statement.           |
+| `ফেরত`       | Return from function.      |
+| `থামো`       | Break from loop.           |
+| `চালিয়ে_যাও` | Continue loop.             |
+| `এবং`        | Logical AND (&&).          |
+| `বা`         | Logical OR (&#124;&#124;). |
+| `নকশা`         | Declares a class.         |
+| `this`          | Refers to the current instance. |
+| `super`         | Calls a method on the superclass. |
 
 Reserved identifiers like `ক্লক`, `ইনপুট`, `এড`, `রিমুভ`, etc., are bound to **native functions** in the global environment.
 
@@ -181,11 +185,11 @@ Below are a few snippet examples to illustrate various features of Borno.
 Save this code as **`native_library_demo.bn`** and run `borno native_library_demo.bn`:
 
 ```none
-// 1) ক্লক (clock) 
+// 1) ক্লক (clock)
 //    Shows the current timestamp in seconds.
 দেখাও "বর্তমান সময় (সেকেন্ডে): " + ক্লক();
 
-// 2) ইনপুট (input) 
+// 2) ইনপুট (input)
 //    Uncomment these lines to test user input interactively.
 // দেখাও "কিছু লিখুনঃ"
 ধরি প্রবেশ = ইনপুট("আপনার লেখা: ");
@@ -336,3 +340,23 @@ counter1(); // Counter = 3
 ```
 
 ---
+
+### Classes & Inheritance Demo
+
+```none
+নকশা Animal {
+    ফাংশন speak() {
+        দেখাও "Generic sound";
+    }
+};
+
+নকশা Dog < Animal {
+    ফাংশন speak() {
+        super.speak();
+        দেখাও "Bark!";
+    }
+};
+
+ধরি d = Dog();
+d.speak();
+```
