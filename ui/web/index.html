@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Borno Playground</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Borno Playground</h1>
+    </header>
+    <main class="container">
+      <section class="column" id="editor-section">
+        <div class="controls">
+          <label for="example-select">Load Example:</label>
+          <select id="example-select"></select>
+          <button id="run-btn">Run Code</button>
+        </div>
+        <textarea
+          id="code-input"
+          placeholder="Write Borno code here..."
+        ></textarea>
+      </section>
+      <section class="column" id="output-section">
+        <pre id="output"></pre>
+      </section>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
